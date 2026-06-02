@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block meta %}
+    <meta http-equiv="refresh" content="3">
+{% endblock meta %}
+{% block title %}
+    {{ sensor.name }}
+{% endblock title %}
+{% block content %}
+    <div class="container">
+        <h2>{{ sensor.name }} ({{ sensor.key }})</h2>
+        <canvas id="chart"></canvas>
+    </div>
+    <script>
+  const labels = [
+      {% for t in telemetry %}
+          "{{ t.created_at|date:'H:i:s' }}",
+      {% endfor %}
+  ];
+
+  const values = [
+      {% for t in telemetry %}
+          {{ t.value }},
+      {% endfor %}
+  ];
+
+  const ctx = document.getElementById('chart');
+
+  new Chart(ctx, {
+      type: 'line',
+      data: {
+          labels: labels,
+          datasets: [{
+              label: '{{ sensor.kind }}',
+              data: values,
+              borderWidth: 2,
+              tension: 0.3
+          }]
+      },
+      options: {
+          responsive: true,
+          scales: {
+              y: {
+                  beginAtZero: false
+              }
+          }
+      }
+  });
+    </script>
+{% endblock content %}

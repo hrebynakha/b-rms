@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Recipes
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Recipes</h1>
+            <a href="{% url 'recipe-create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i>
+                Create Recipe
+            </a>
+        </div>
+        <form method="get" class="mb-4">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Search recipes..."
+                       value="{{ search }}">
+                {% if search %}
+                    <a href="{% url 'recipe-list' %}" class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+        {% if recipes %}
+            <div class="row g-4">
+                {% for recipe in recipes %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card h-100 border-0 shadow-sm bg-secondary">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h4 class="card-title mb-0">{{ recipe.name }}</h4>
+                                    <span class="badge bg-dark">{{ recipe.steps.count }} steps</span>
+                                </div>
+                                <p class="text-light-emphasis flex-grow-1">{{ recipe.description|default:"No description" }}</p>
+                                <div class="small text-muted mb-3">
+                                    Created:
+                                    {{ recipe.created_at|date:"d M Y" }}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'recipe-edit' recipe.id %}"
+                                       class="btn btn-outline-light btn-sm">Edit</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card bg-secondary border-0">
+                <div class="card-body text-center py-5">
+                    <h4>No recipes found</h4>
+                    <p class="text-muted">Create your first brewing recipe.</p>
+                    <a href="{% url 'recipe-create' %}" class="btn btn-primary">Create Recipe</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}

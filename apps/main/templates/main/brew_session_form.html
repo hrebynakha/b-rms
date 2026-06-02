@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}
+    New Brew Session
+{% endblock title %}
+{% block content %}
+    <h1 class="mb-4">New Brew Session</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card bg-secondary">
+            <div class="card-body">
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success">Create Session</button>
+            </div>
+        </div>
+    </form>
+{% endblock content %}

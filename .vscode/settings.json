@@ -1,0 +1,14 @@
+{
+  "pylint.args": ["--load-plugins=pylint_django"],
+
+  "[html][django-html][handlebars][hbs][mustache][jinja][jinja-html][nj][njk][nunjucks][twig]": {
+    "editor.defaultFormatter": "monosans.djlint"
+  },
+  "files.associations": {
+    "*.html": "jinja-html"
+  },
+  "cSpell.words": [
+    "endfor",
+    "endwith"
+  ]
+}

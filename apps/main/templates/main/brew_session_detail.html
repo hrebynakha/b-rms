@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}
+    Brew Session
+{% endblock title %}
+{% block content %}
+    <h1 class="mb-4">{{ session.recipe.name }}</h1>
+    <h4 class="mb-4 text-muted">{{ session.recipe.description }}</h4>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-secondary mb-3">
+                <div class="card-body">
+                    <h5>Status</h5>
+                    <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.status }}</span>
+                </div>
+            </div>
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5>Current Step</h5>
+                    {% if current_step %}
+                        <div>{{ current_step.name }}</div>
+                        <div>{{ current_step.target_temperature }}°C</div>
+                        <div>{{ current_step.duration_minutes }} min</div>
+                    {% else %}
+                        Completed
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="mb-3">Recipe Steps</h5>
+                    {% for step in steps %}
+                        <div class="border-bottom py-2">
+                            <strong>
+                                {{ step.order }}.
+                                {{ step.name }}
+                            </strong>
+                            <div>
+                                {{ step.target_temperature }}°C
+                                /
+                                {{ step.duration_minutes }} min
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

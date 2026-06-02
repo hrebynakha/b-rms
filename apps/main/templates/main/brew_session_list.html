@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}
+    Brew Sessions
+{% endblock title %}
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Brew Sessions</h1>
+        <a href="{% url 'brew-session-create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            New Session
+        </a>
+    </div>
+    <div class="row g-3">
+        {% for session in sessions %}
+            <div class="col-md-6">
+                <div class="card bg-secondary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5>{{ session.recipe.name }}</h5>
+                            <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.status }}</span>
+                        </div>
+                        <div>
+                            Brewery:
+                            {{ session.brewery.name }}
+                        </div>
+                        <div>
+                            Step:
+                            {{ session.current_step_index }}
+                        </div>
+                        <div class="small text-muted mt-2">{{ session.created_at }}</div>
+                        <a href="{% url 'brew-session-detail' session.id %}"
+                           class="btn btn-outline-light btn-sm mt-3">Open</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-warning">No brew sessions</div>
+        {% endfor %}
+    </div>
+{% endblock content %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}
+    Create Recipe
+{% endblock title %}
+{% block content %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Create Recipe</h1>
+            <a href="{% url 'recipe-list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="card bg-secondary mb-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div>
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="mb-0">Mash Steps</h3>
+                <button type="button" id="add-step-btn" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i>
+                    Add Step
+                </button>
+            </div>
+            <div id="steps-container"></div>
+            <button type="submit" class="btn btn-success mt-4">Save Recipe</button>
+        </form>
+    </div>
+    {{ steps|json_script:"steps-data" }}
+    <script>
+const stepsData = JSON.parse(
+    document.getElementById("steps-data").textContent
+);
+
+let stepCounter = 0;
+
+function renderStep(step = null) {
+
+    stepCounter++;
+
+    const html = `
+        <div class="card bg-secondary mb-3 step-item">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between mb-3">
+
+                    <h5>Step ${stepCounter}</h5>
+
+                    <button type="button" class="btn btn-sm btn-danger remove-step">
+                        <i class="bi bi-trash"></i>
+                    </button>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="step_name" class="form-control" value="${step ? step.name : ''}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Temperature (°C)</label>
+                        <input type="number" step="0.1" name="step_temperature" class="form-control" value="${step ? step.target_temperature : ''}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Duration (minutes)</label>
+                        <input type="number" name="step_duration" class="form-control" value="${step ? step.duration_minutes : ''}" required>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    document
+        .getElementById("steps-container")
+        .insertAdjacentHTML("beforeend", html);
+}
+
+// init existing steps
+if (stepsData.length > 0) {
+    stepsData.forEach(renderStep);
+} else {
+    renderStep();
+}
+
+// add new step
+document
+    .getElementById("add-step-btn")
+    .addEventListener("click", () => renderStep());
+
+// remove step
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("remove-step")) {
+        e.target.closest(".step-item").remove();
+    }
+});
+
+    </script>
+{% endblock content %}
