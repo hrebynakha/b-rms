@@ -15,11 +15,15 @@ def index(request):
 
 def brewery_list_view(request):
 
-    breweries = Brewery.objects.prefetch_related(
-        "controllers",
-        "controllers__sensors",
-        "controllers__sensors__telemetry",
-    ).all()
+    breweries = (
+        Brewery.objects.prefetch_related(
+            "controllers",
+            "controllers__sensors",
+            "controllers__sensors__telemetry",
+        )
+        .all()
+        .order_by("-created_at")
+    )
 
     return render(
         request,

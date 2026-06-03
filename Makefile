@@ -9,3 +9,9 @@ esp:
 	python scripts/fake_esp32_on.py
 sensor:
 	python scripts/fake_sensor.py
+web:
+	docker run --rm \
+		-p 80:80 \
+		-v d:/repos/b-rms/config/nginx.conf:/etc/nginx/nginx.conf:ro \
+		--add-host=host.docker.internal:host-gateway \
+		nginx

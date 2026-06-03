@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-odvk8k0ck0kju320s92%a)=p0&=%6+#g_rn)p8=jtns=92rkh!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["beer.lan", "localhost", "127.0.0.1"]
 
 
 # Application definition

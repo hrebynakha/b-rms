@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 class Controller(models.Model):
     brewery = models.ForeignKey(
         "Brewery",
@@ -9,6 +10,8 @@ class Controller(models.Model):
     )
 
     name = models.CharField(max_length=255)
+
+    ip = models.CharField(max_length=255, default="0.0.0.0")
 
     mac_address = models.CharField(
         max_length=255,
@@ -37,6 +40,4 @@ class Controller(models.Model):
         if not self.last_seen_at:
             return False
 
-        return (
-            timezone.now() - self.last_seen_at
-        ).total_seconds() < 30
+        return (timezone.now() - self.last_seen_at).total_seconds() < 30

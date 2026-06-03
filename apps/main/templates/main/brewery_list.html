@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block meta %}
-  {# <meta http-equiv="refresh" content="5"> #}
+  {# <meta http-equiv="refresh" content="5" /> #}
 {% endblock meta %}
 {% load static %}
 {% block title %}
@@ -25,7 +25,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <strong>{{ controller.name }}</strong>
-                  <div class="text-muted">{{ controller.mac_address }}</div>
+                  <div class="text-muted">{{ controller.ip }}</div>
                 </div>
                 <div>
                   {% if controller.is_online %}
@@ -44,7 +44,7 @@
                     <small class="text-muted">{{ sensor.key }}</small>
                     <a href="{% url 'sensor-detail' sensor.id %}"
                        class="btn btn-sm btn-outline-light">View history</a>
-                    <hr>
+                    <hr />
                     {% with latest=sensor.telemetry.first %}
                       {% if latest %}
                         <div class="fs-4">{{ latest.value }} {{ sensor.unit }}</div>

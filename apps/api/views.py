@@ -1,5 +1,3 @@
-# api/views.py
-
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -28,9 +26,7 @@ class BootstrapView(APIView):
 
         data = serializer.validated_data
 
-        controller = Controller.objects.filter(
-            mac_address=data["mac_address"]
-        ).first()
+        controller = Controller.objects.filter(mac_address=data["mac_address"]).first()
 
         created = False
 
@@ -49,12 +45,20 @@ class BootstrapView(APIView):
                     "firmware_version",
                     "",
                 ),
+                ip=data.get(
+                    "ip",
+                    "",
+                ),
             )
             created = True
 
         controller.last_seen_at = timezone.now()
         controller.firmware_version = data.get(
             "firmware_version",
+            "",
+        )
+        controller.ip = data.get(
+            "ip",
             "",
         )
         controller.save()
@@ -65,17 +69,19 @@ class BootstrapView(APIView):
                 controller=controller,
                 key=sensor_data["key"],
                 defaults={
-                    "name": sensor_data["key"],
+                    "name": sensor_data["name"],
                     "kind": sensor_data["kind"],
                     "unit": sensor_data.get("unit", ""),
-                }
+                },
             )
 
-        return Response({
-            "controller_id": controller.id,
-            "brewery_id": controller.brewery.id,
-            "created": created,
-        })
+        return Response(
+            {
+                "controller_id": controller.id,
+                "brewery_id": controller.brewery.id,
+                "created": created,
+            }
+        )
 
 
 class TelemetryView(APIView):
@@ -90,9 +96,7 @@ class TelemetryView(APIView):
 
         data = serializer.validated_data
 
-        controller = Controller.objects.get(
-            mac_address=data["mac_address"]
-        )
+        controller = Controller.objects.get(mac_address=data["mac_address"])
 
         controller.last_seen_at = timezone.now()
         controller.save(update_fields=["last_seen_at"])
@@ -112,6 +116,8 @@ class TelemetryView(APIView):
                 value=value,
             )
 
-        return Response({
-            "success": True,
-        })
+        return Response(
+            {
+                "success": True,
+            }
+        )
