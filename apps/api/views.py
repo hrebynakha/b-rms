@@ -90,10 +90,8 @@ class TelemetryView(APIView):
     permission_classes = []
 
     def post(self, request):
-
         serializer = TelemetrySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         data = serializer.validated_data
 
         controller = Controller.objects.get(mac_address=data["mac_address"])
@@ -109,6 +107,7 @@ class TelemetryView(APIView):
             ).first()
 
             if not sensor:
+                print("Sensor not found")
                 continue
 
             Telemetry.objects.create(

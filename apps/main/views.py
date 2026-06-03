@@ -41,10 +41,10 @@ def sensor_detail_view(request, sensor_id):
         id=sensor_id,
     )
 
-    last_200 = sensor.telemetry.order_by("-created_at")[:200]
+    last_objects = sensor.telemetry.order_by("-created_at")[:50]
 
     # reverse for chart order
-    data = list(reversed(last_200))
+    data = list(reversed(last_objects))
 
     return render(
         request,
