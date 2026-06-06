@@ -3,17 +3,18 @@
 #include "wifi_manager.h"
 #include "secrets.h"
 
-const char* WIFI_SSID = CONFIG_WIFI_SSID;
-const char* WIFI_PASS = CONFIG_WIFI_PASS;
+const char *WIFI_SSID = CONFIG_WIFI_SSID;
+const char *WIFI_PASS = CONFIG_WIFI_PASS;
 
-
-void connectWiFi() {
+void connectWiFi()
+{
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
     Serial.print("Connecting WiFi");
 
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(500);
         Serial.print(".");
     }
@@ -23,6 +24,7 @@ void connectWiFi() {
     Serial.println(WiFi.localIP());
 }
 
-bool isWiFiConnected() {
+bool isWiFiConnected()
+{
     return WiFi.status() == WL_CONNECTED;
 }
