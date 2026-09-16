@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>B-RMS Setup</title>
+
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: #334155;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family:
+          Inter,
+          Segoe UI,
+          sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      .logo h1 {
+        color: white;
+        font-size: 2rem;
+        margin-bottom: 6px;
+      }
+
+      .logo p {
+        color: var(--muted);
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      label {
+        display: block;
+        color: var(--text);
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+
+      input {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #0f172a;
+        color: white;
+        font-size: 15px;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      button {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        background: var(--primary);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      button:hover {
+        background: var(--primary-hover);
+      }
+
+      .status {
+        margin-top: 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .version {
+        margin-top: 24px;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <div class="logo">
+          <h1>🍺 B-RMS</h1>
+          <p>Brewery Remote Management System</p>
+        </div>
+
+        <form action="/save" method="POST">
+          <div class="form-group">
+            <label>WiFi SSID</label>
+            <input type="text" name="ssid" placeholder="Home WiFi" />
+          </div>
+
+          <div class="form-group">
+            <label>WiFi Password</label>
+            <input type="password" name="password" placeholder="********" />
+          </div>
+
+          <div class="form-group">
+            <label>B-RMS Server URL</label>
+            <input
+              type="text"
+              name="server"
+              value="http://beer.lan"
+            />
+          </div>
+
+          <button type="submit">Save & Connect</button>
+        </form>
+
+        <div class="status">Configure your brewery controller</div>
+
+        <div class="version">B-RMS Controller v1.0</div>
+      </div>
+    </div>
+      <script>
+        async function saveConfig() {
+
+            await fetch("/api/config", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ssid: document.getElementById("ssid").value,
+                    password: document.getElementById("password").value,
+                    server_url: document.getElementById("server").value
+                })
+            });
+
+            alert("Configuration saved. Device will reboot.");
+        }    
+</script>
+  </body>
+</html>
