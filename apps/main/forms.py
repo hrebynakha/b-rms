@@ -38,3 +38,11 @@ class BrewSessionForm(forms.ModelForm):
             "brewery",
             "recipe",
         ]
+
+
+class BreweryDeleteForm(forms.Form):
+    brewery_id = forms.IntegerField(widget=forms.HiddenInput())
+
+
+class RecipeDeleteForm(forms.Form):
+    recipe_id = forms.IntegerField(widget=forms.HiddenInput())

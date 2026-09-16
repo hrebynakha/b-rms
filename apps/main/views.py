@@ -2,7 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
 
-from apps.main.forms import BrewSessionForm, RecipeForm
+from apps.main.forms import (
+    BrewSessionForm,
+    RecipeForm,
+    BreweryDeleteForm,
+    RecipeDeleteForm,
+)
 from apps.main.models.brewery import Brewery
 from apps.main.models.sensor import Sensor
 from apps.main.models.recipe import Recipe, RecipeStep
@@ -257,3 +262,49 @@ def brew_session_detail_view(
             "current_step": current_step,
         },
     )
+
+
+def brewery_delete_view(request):
+
+    if request.method == "POST":
+
+        form = BreweryDeleteForm(request.POST)
+
+        if form.is_valid():
+
+            brewery = get_object_or_404(
+                Brewery,
+                id=form.cleaned_data["brewery_id"],
+            )
+
+            brewery.delete()
+
+            messages.success(
+                request,
+                "Brewery deleted successfully.",
+            )
+
+    return redirect("brewery-list")
+
+
+def recipe_delete_view(request):
+
+    if request.method == "POST":
+
+        form = RecipeDeleteForm(request.POST)
+
+        if form.is_valid():
+
+            recipe = get_object_or_404(
+                Recipe,
+                id=form.cleaned_data["recipe_id"],
+            )
+
+            recipe.delete()
+
+            messages.success(
+                request,
+                "Recipe deleted successfully.",
+            )
+
+    return redirect("recipe-list")

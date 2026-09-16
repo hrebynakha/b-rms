@@ -45,7 +45,41 @@
                                 <div class="d-flex gap-2">
                                     <a href="{% url 'recipe-edit' recipe.id %}"
                                        class="btn btn-outline-light btn-sm">Edit</a>
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteRecipeModal{{ recipe.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade"
+                         id="deleteRecipeModal{{ recipe.id }}"
+                         tabindex="-1"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content bg-dark">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Delete recipe</h5>
+                                    <button type="button"
+                                            class="btn-close btn-close-white"
+                                            data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="post" action="{% url 'recipe-delete' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+                                    <div class="modal-body">
+                                        Are you sure you want to delete
+                                        <strong>{{ recipe.name }}</strong>?
+                                        <div class="text-danger mt-3">This action cannot be undone.</div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

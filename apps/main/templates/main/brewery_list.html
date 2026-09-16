@@ -16,6 +16,12 @@
             <h3>{{ brewery.name }}</h3>
             <small>{{ brewery.slug }}</small>
           </div>
+          <button type="button"
+                  class="btn btn-danger btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteBreweryModal{{ brewery.id }}">
+            <i class="bi bi-trash"></i>
+          </button>
         </div>
         <hr />
         <h5>Controllers</h5>
@@ -55,6 +61,36 @@
                     {% endwith %}
                   </div>
                 {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="modal fade"
+               id="deleteBreweryModal{{ brewery.id }}"
+               tabindex="-1"
+               aria-labelledby="deleteBreweryModalLabel{{ brewery.id }}"
+               aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content bg-dark">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="deleteBreweryModalLabel{{ brewery.id }}">Delete brewery</h5>
+                  <button type="button"
+                          class="btn-close btn-close-white"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'brewery-delete' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="brewery_id" value="{{ brewery.id }}">
+                  <div class="modal-body">
+                    Are you sure you want to delete
+                    <strong>{{ brewery.name }}</strong>?
+                    <div class="text-danger mt-3">This action cannot be undone.</div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
