@@ -1,18 +1,16 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block meta %}
-  {% for brewery in breweries %}
-    {% if brewery.active_session.status == "running" %}<meta http-equiv="refresh" content="5" />{% endif %}
-  {% endfor %}
-{% endblock meta %}
 {% load static %}
 {% block title %}
   {% translate "Breweries" %}
 {% endblock title %}
 {% block content %}
   <h1 class="mb-4">{% translate "Breweries" %}</h1>
+  <div data-page-poller
+       data-poll-interval="5000"
+       data-poll-active="{% if has_active_session %}true{% else %}false{% endif %}"></div>
   {% for brewery in breweries %}
-    <div class="card bg-secondary mb-4">
+    <div class="card bg-secondary mb-4" data-poll-region="brewery-{{ brewery.id }}">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -34,7 +32,8 @@
                 <div>
                   <div class="text-info text-uppercase small">{% translate "Active brew session" %}</div>
                   <h5 class="mb-1">{{ brewery.active_session.recipe.name }}</h5>
-                  <span class="badge {% if brewery.active_session.status == 'running' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                  <span class="badge d-inline-flex align-items-center gap-2 {% if brewery.active_session.status == 'running' %}bg-primary{% elif brewery.active_session.status == 'paused' %}bg-info text-dark{% elif brewery.active_session.status == 'completed' %}bg-success{% elif brewery.active_session.status == 'failed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                    {% if brewery.active_session.status == "running" %}<span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>{% endif %}
                     {{ brewery.active_session.get_status_display }}
                   </span>
                 </div>
@@ -44,19 +43,32 @@
               {% if brewery.active_session.status == "pending" %}
                 <button type="button"
                         class="btn btn-primary mt-3 js-start-session"
+                        {% if not brewery.demo_ready %}disabled{% endif %}
                         data-start-url="{% url 'api-brew-session-start' brewery.active_session.id %}"
                         data-error-message="{% translate 'Could not start session.' %}">
                   {% translate "Start 3-minute demo" %}
                 </button>
-              {% elif brewery.active_session.status == "running" %}
+                {% if not brewery.demo_ready %}
+                  <div class="alert alert-warning mt-3 mb-0" role="alert">
+                    {% translate "Demo scripts are inactive. Start the ESP32 and telemetry scripts." %}
+                  </div>
+                {% endif %}
+              {% elif brewery.active_session.status == "running" or brewery.active_session.status == "paused" %}
                 <div class="mt-3">
                   <div class="d-flex justify-content-between">
-                    <span>{% translate brewery.session_progress.step_name %}</span>
+                    <span>
+                      {% translate brewery.session_progress.step_name %}
+                      —
+                      {% blocktranslate with current=brewery.session_progress.step_number total=brewery.session_progress.total_steps %}step {{ current }} / {{ total }}{% endblocktranslate %}
+                    </span>
                     <span>{% blocktranslate with seconds=brewery.session_progress.remaining_seconds %}{{ seconds }}s left{% endblocktranslate %}</span>
+                  </div>
+                  <div class="small text-muted mb-1">
+                    {% blocktranslate with minutes=brewery.session_progress.step_remaining_minutes seconds=brewery.session_progress.step_remaining_seconds_remainder %}Until the next step: {{ minutes }} min {{ seconds }} sec{% endblocktranslate %}
                   </div>
                   <div class="progress" role="progressbar" aria-label="{% translate 'Demo mash progress' %}"
                        aria-valuenow="{{ brewery.session_progress.percent }}" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                    <div class="progress-bar progress-bar-striped {% if brewery.active_session.status == 'running' %}progress-bar-animated{% endif %}"
                          style="width: {{ brewery.session_progress.percent }}%"></div>
                   </div>
                 </div>
@@ -143,24 +155,27 @@
     <div class="alert alert-warning">{% translate "No breweries registered" %}</div>
   {% endfor %}
   <script>
-    document.querySelectorAll(".js-start-session").forEach((button) => {
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        const errorBox = button.closest(".card-body").querySelector(".js-start-error");
-        try {
-          const response = await fetch(button.dataset.startUrl, {
-            method: "POST",
-            headers: {"X-CSRFToken": "{{ csrf_token }}"}
-          });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.detail || button.dataset.errorMessage);
-          window.location.reload();
-        } catch (error) {
-          errorBox.textContent = error.message;
-          errorBox.classList.remove("d-none");
-          button.disabled = false;
-        }
-      });
+    document.addEventListener("click", async (event) => {
+      const button = event.target.closest(".js-start-session");
+      if (!button) return;
+      button.disabled = true;
+      const errorBox = button.closest(".card-body").querySelector(".js-start-error");
+      try {
+        const response = await fetch(button.dataset.startUrl, {
+          method: "POST",
+          headers: {"X-CSRFToken": "{{ csrf_token }}"}
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || button.dataset.errorMessage);
+        await window.refreshPageRegions();
+      } catch (error) {
+        errorBox.textContent = error.message;
+        errorBox.classList.remove("d-none");
+        button.disabled = false;
+      }
     });
   </script>
 {% endblock content %}
+{% block extra_js %}
+  <script src="{% static 'js/page-poller.js' %}"></script>
+{% endblock extra_js %}

@@ -3,37 +3,88 @@
 {% block title %}
     {% translate "Brew Session" %}
 {% endblock title %}
-{% block meta %}
-    {% if session.status == "running" %}<meta http-equiv="refresh" content="5" />{% endif %}
-{% endblock meta %}
 {% block content %}
-    <h1 class="mb-4">{{ session.recipe.name }}</h1>
-    <h4 class="mb-4 text-muted">{{ session.recipe.description }}</h4>
-    <div class="row">
+    <a href="{% url 'brew-session-list' %}" class="back-link"><i class="bi bi-arrow-left"></i> {% translate "Brew Sessions" %}</a>
+    <div class="page-heading mt-3 mb-4">
+        <div>
+            <span class="eyebrow">{{ session.brewery.name }}</span>
+            <h1 class="mb-1">{{ session.recipe.name }}</h1>
+            <p class="text-body-secondary mb-0">{{ session.recipe.description }}</p>
+        </div>
+    </div>
+    <div data-page-poller
+         data-poll-interval="5000"
+         data-poll-active="{% if session.status == 'pending' or session.status == 'running' or session.status == 'paused' %}true{% else %}false{% endif %}">
+    </div>
+    <div class="row" data-poll-region="brew-session">
         <div class="col-md-4">
-            <div class="card bg-secondary mb-3">
+            <div class="card app-card mb-3 status-card status-card-{{ session.status }}">
                 <div class="card-body">
                     <h5>{% translate "Status" %}</h5>
-                    <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.get_status_display }}</span>
+                    <span class="badge d-inline-flex align-items-center gap-2 p-2 {% if session.status == 'pending' %}bg-warning text-dark {% elif session.status == 'running' %}bg-primary {% elif session.status == 'paused' %}bg-info text-dark {% elif session.status == 'completed' %}bg-success {% else %}bg-danger{% endif %}">
+                        {% if session.status == "pending" %}
+                            <i class="bi bi-hourglass-split"></i>
+                        {% elif session.status == "running" %}
+                            <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                        {% elif session.status == "paused" %}
+                            <i class="bi bi-pause-circle-fill"></i>
+                        {% elif session.status == "completed" %}
+                            <i class="bi bi-check-circle-fill"></i>
+                        {% else %}
+                            <i class="bi bi-x-circle-fill"></i>
+                        {% endif %}
+                        {{ session.get_status_display }}
+                    </span>
                     {% if session.status == "pending" %}
                         <button type="button"
                                 class="btn btn-primary d-block mt-3 js-start-session"
+                                {% if not demo_ready %}disabled{% endif %}
                                 data-start-url="{% url 'api-brew-session-start' session.id %}"
-                                data-error-message="{% translate 'Could not start session.' %}">
+                                data-error-message="{% translate "Could not start session." %}">
                             {% translate "Start 3-minute demo" %}
                         </button>
-                        <div class="alert alert-danger mt-3 mb-0 d-none js-start-error" role="alert"></div>
+                        {% if not demo_ready %}
+                            <div class="alert alert-warning mt-3 mb-0" role="alert">
+                                {% translate "Demo scripts are inactive. Start the ESP32 and telemetry scripts." %}
+                            </div>
+                        {% endif %}
+                        <div class="alert alert-danger mt-3 mb-0 d-none js-start-error"
+                             role="alert"></div>
                     {% endif %}
+                    {% if session.status == "running" %}
+                        <button type="button"
+                                class="btn btn-warning d-block mt-3 js-session-action"
+                                data-action-url="{% url 'api-brew-session-pause' session.id %}">
+                            <i class="bi bi-pause-fill"></i> {% translate "Pause" %}
+                        </button>
+                    {% elif session.status == "paused" %}
+                        <button type="button"
+                                class="btn btn-primary d-block mt-3 js-session-action"
+                                {% if not demo_ready %}disabled{% endif %}
+                                data-action-url="{% url 'api-brew-session-resume' session.id %}">
+                            <i class="bi bi-play-fill"></i> {% translate "Resume" %}
+                        </button>
+                    {% endif %}
+                    <div class="alert alert-danger mt-3 mb-0 d-none js-session-error"
+                         role="alert"></div>
                 </div>
             </div>
-            <div class="card bg-secondary">
+            <div class="card app-card">
                 <div class="card-body">
                     <h5>{% translate "Current Step" %}</h5>
-                    {% if session.status == "running" %}
-                        <div>{% translate session_progress.step_name %}</div>
-                        <div>{% blocktranslate with seconds=session_progress.remaining_seconds %}{{ seconds }}s left in demo{% endblocktranslate %}</div>
+                    {% if session.status == "running" or session.status == "paused" %}
+                        <div class="fw-semibold">{% translate session_progress.step_name %}</div>
+                        <div>
+                            {% blocktranslate with current=session_progress.step_number total=session_progress.total_steps %}Step {{ current }} / {{ total }}{% endblocktranslate %}
+                        </div>
+                        <div>
+                            {% blocktranslate with minutes=session_progress.step_remaining_minutes seconds=session_progress.step_remaining_seconds_remainder %}Until the next step: {{ minutes }} min {{ seconds }} sec{% endblocktranslate %}
+                        </div>
+                        <div>
+                            {% blocktranslate with seconds=session_progress.remaining_seconds %}{{ seconds }}s left in demo{% endblocktranslate %}
+                        </div>
                         <div class="progress mt-2">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                            <div class="progress-bar progress-bar-striped {% if session.status == 'running' %}progress-bar-animated{% endif %}"
                                  style="width: {{ session_progress.percent }}%"></div>
                         </div>
                     {% elif current_step %}
@@ -47,15 +98,35 @@
             </div>
         </div>
         <div class="col-md-8">
-            <div class="card bg-secondary">
+            <div class="card app-card">
                 <div class="card-body">
                     <h5 class="mb-3">{% translate "Recipe Steps" %}</h5>
                     {% for step in steps %}
-                        <div class="border-bottom py-2">
-                            <strong>
-                                {{ step.order }}.
-                                {{ step.name }}
-                            </strong>
+                        <div class="brew-step border-bottom py-3 px-2 {% if forloop.counter0 < session.current_step_index %}brew-step-completed {% elif session.status == 'running' or session.status == 'paused' %}{% if forloop.counter0 == session.current_step_index %}brew-step-current{% endif %}{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <strong>
+                                    {{ step.order }}.
+                                    {{ step.name }}
+                                </strong>
+                                {% if forloop.counter0 < session.current_step_index %}
+                                    <span class="text-success"
+                                          title="{% translate "Completed" %}"
+                                          aria-label="{% translate "Completed" %}">
+                                        <i class="bi bi-check-circle-fill fs-5"></i>
+                                    </span>
+                                {% elif session.status == "running" or session.status == "paused" %}
+                                    {% if forloop.counter0 == session.current_step_index %}
+                                        <span class="badge bg-primary d-inline-flex align-items-center gap-2">
+                                            {% if session.status == "running" %}<span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>{% endif %}
+                                            {% if session.status == "paused" %}
+                                                {% translate "Paused" %}
+                                            {% else %}
+                                                {% translate "In progress" %}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
                             <div>
                                 {{ step.target_temperature }}°C
                                 /
@@ -66,27 +137,144 @@
                 </div>
             </div>
         </div>
+        {% if temperature_below_target %}
+            <div class="col-12 mt-3">
+                <div class="alert alert-warning mb-0" role="alert">
+                    <i class="bi bi-thermometer-low"></i>
+                    {% blocktranslate with current=latest_temperature target=current_step.target_temperature %}Current temperature {{ current }}°C has not reached the target {{ target }}°C.{% endblocktranslate %}
+                </div>
+            </div>
+        {% endif %}
     </div>
+    <div class="card app-card mt-4">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h5 class="mb-1">{% translate "Session temperatures" %}</h5>
+                    <small class="text-body-secondary">{% translate "Live readings recorded during this session" %}</small>
+                </div>
+                <div class="reading-status {% if temperature_is_live %}reading-live{% elif latest_temperature is not None %}reading-history{% else %}reading-empty{% endif %} js-session-reading">
+                    {% if latest_temperature is not None %}
+                        <span class="reading-value">{{ latest_temperature }}°C</span>
+                        <span class="reading-meta">
+                            {% if temperature_is_live %}
+                                <i class="bi bi-broadcast"></i> {% translate "Live" %}
+                            {% else %}
+                                <i class="bi bi-clock-history"></i> {% translate "Last reading" %} · {{ latest_temperature_at|date:"H:i:s" }}
+                            {% endif %}
+                        </span>
+                    {% else %}
+                        <span class="reading-meta"><i class="bi bi-slash-circle"></i> {% translate "No data" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="session-temperature-charts" class="temperature-chart-grid"></div>
+            <div class="chart-shell {% if temperature_chart.datasets %}d-none{% endif %}"
+                 id="session-chart-empty">
+                <div class="chart-empty">
+                    <i class="bi bi-graph-up"></i>
+                    <span>{% translate "Temperature data will appear after the session starts." %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ temperature_chart|json_script:"session-temperature-data" }}
     <script>
-        const startButton = document.querySelector(".js-start-session");
-        if (startButton) {
-            startButton.addEventListener("click", async () => {
-                startButton.disabled = true;
-                const errorBox = document.querySelector(".js-start-error");
-                try {
-                    const response = await fetch(startButton.dataset.startUrl, {
-                        method: "POST",
-                        headers: {"X-CSRFToken": "{{ csrf_token }}"}
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.detail || startButton.dataset.errorMessage);
-                    window.location.reload();
-                } catch (error) {
-                    errorBox.textContent = error.message;
-                    errorBox.classList.remove("d-none");
-                    startButton.disabled = false;
+        document.addEventListener("click", async (event) => {
+            const button = event.target.closest(".js-start-session, .js-session-action");
+            if (!button) return;
+            button.disabled = true;
+            const errorBox = document.querySelector(".js-start-error, .js-session-error");
+            try {
+                const response = await fetch(button.dataset.startUrl || button.dataset.actionUrl, {
+                    method: "POST",
+                    headers: {"X-CSRFToken": "{{ csrf_token }}"}
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || button.dataset.errorMessage);
+                await window.refreshPageRegions();
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.classList.remove("d-none");
+                button.disabled = false;
+            }
+        });
+
+        const temperatureCharts = new Map();
+
+        function renderTemperatureCharts(datasets) {
+            const container = document.getElementById("session-temperature-charts");
+            document.getElementById("session-chart-empty").classList.toggle("d-none", datasets.length > 0);
+            const currentLabels = new Set(datasets.map((dataset) => dataset.label));
+
+            temperatureCharts.forEach((entry, label) => {
+                if (currentLabels.has(label)) return;
+                entry.chart.destroy();
+                entry.panel.remove();
+                temperatureCharts.delete(label);
+            });
+
+            datasets.forEach((dataset) => {
+                const existing = temperatureCharts.get(dataset.label);
+                if (existing) {
+                    existing.chart.data.datasets = [dataset];
+                    existing.chart.update("none");
+                    return;
                 }
+
+                const panel = document.createElement("section");
+                panel.className = "temperature-chart-panel";
+                const title = document.createElement("h6");
+                title.textContent = dataset.label;
+                const chartShell = document.createElement("div");
+                chartShell.className = "chart-shell chart-shell-sm";
+                const canvas = document.createElement("canvas");
+                chartShell.append(canvas);
+                panel.append(title, chartShell);
+                container.append(panel);
+
+                const chart = new Chart(canvas, {
+                    type: "line",
+                    data: {datasets: [dataset]},
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {legend: {display: false}},
+                        interaction: {mode: "nearest", axis: "x", intersect: false},
+                        elements: {
+                            line: {borderWidth: 2, tension: 0.35},
+                            point: {radius: 0, hoverRadius: 4}
+                        },
+                        scales: {
+                            x: {type: "category", grid: {display: false}},
+                            y: {beginAtZero: false, grid: {color: "rgba(255, 255, 255, 0.08)"}}
+                        }
+                    }
+                });
+                temperatureCharts.set(dataset.label, {chart, panel});
             });
         }
+
+        renderTemperatureCharts(
+            JSON.parse(document.getElementById("session-temperature-data").textContent).datasets
+        );
+
+        document.addEventListener("page:poll", (event) => {
+            const nextReading = event.detail.document.querySelector(".js-session-reading");
+            const currentReading = document.querySelector(".js-session-reading");
+            if (nextReading && currentReading) {
+                currentReading.className = nextReading.className;
+                currentReading.innerHTML = nextReading.innerHTML;
+            }
+            const element = event.detail.document.getElementById("session-temperature-data");
+            if (!element) return;
+            const datasets = JSON.parse(element.textContent).datasets;
+            renderTemperatureCharts(datasets);
+        });
     </script>
 {% endblock content %}
+{% block extra_js %}
+    {% load static %}
+    <script src="{% static 'js/page-poller.js' %}"></script>
+{% endblock extra_js %}

@@ -1,21 +1,34 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}
-    {% if is_edit %}{% translate "Edit Recipe" %}{% else %}{% translate "Create Recipe" %}{% endif %}
+    {% if is_edit %}
+        {% translate "Edit Recipe" %}
+    {% else %}
+        {% translate "Create Recipe" %}
+    {% endif %}
 {% endblock title %}
 {% block content %}
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>{% if is_edit %}{% translate "Edit Recipe" %}{% else %}{% translate "Create Recipe" %}{% endif %}</h1>
-            <a href="{% url 'recipe-list' %}" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i>
-                {% translate "Back" %}
-            </a>
+    <div class="page-shell">
+        <a href="{% url 'recipe-list' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> {% translate "Recipes" %}
+        </a>
+        <div class="page-heading mt-3 mb-4">
+            <div>
+                <span class="eyebrow">{% translate "Recipe builder" %}</span>
+                <h1 class="mb-1">
+                    {% if is_edit %}
+                        {% translate "Edit Recipe" %}
+                    {% else %}
+                        {% translate "Create Recipe" %}
+                    {% endif %}
+                </h1>
+                <p class="text-body-secondary mb-0">{% translate "Build the mash schedule step by step." %}</p>
+            </div>
         </div>
         <form method="post">
             {% csrf_token %}
-            <div class="card bg-secondary mb-4">
-                <div class="card-body">
+            <div class="card app-card mb-4">
+                <div class="card-body p-4">
                     <div class="mb-3">
                         <label class="form-label">{% translate "Name" %}</label>
                         {{ form.name }}
@@ -26,15 +39,23 @@
                     </div>
                 </div>
             </div>
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0">{% translate "Mash Steps" %}</h3>
-                <button type="button" id="add-step-btn" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i>
-                    {% translate "Add Step" %}
-                </button>
+            <div class="recipe-actions-sticky mb-3">
+                <div>
+                    <h3 class="mb-0">{% translate "Mash Steps" %}</h3>
+                    <small class="text-body-secondary"><span id="step-count">0</span> {% translate "steps" %}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" id="add-step-btn" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        <span class="d-none d-sm-inline">{% translate "Add Step" %}</span>
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i>
+                        <span class="d-none d-sm-inline">{% translate "Save Recipe" %}</span>
+                    </button>
+                </div>
             </div>
-            <div id="steps-container"></div>
-            <button type="submit" class="btn btn-success mt-4">{% translate "Save Recipe" %}</button>
+            <div id="steps-container" class="recipe-steps"></div>
         </form>
     </div>
     {{ steps|json_script:"steps-data" }}
@@ -50,26 +71,34 @@ const durationLabel = "{% translate 'Duration (minutes)' %}";
 
 let stepCounter = 0;
 
+function updateStepNumbers() {
+    const steps = document.querySelectorAll(".step-item");
+    steps.forEach((item, index) => {
+        item.querySelector(".step-number").textContent = index + 1;
+    });
+    document.getElementById("step-count").textContent = steps.length;
+}
+
 function renderStep(step = null) {
 
     stepCounter++;
 
     const html = `
-        <div class="card bg-secondary mb-3 step-item">
+        <div class="card app-card mb-3 step-item">
 
             <div class="card-body">
 
-                <div class="d-flex justify-content-between mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
 
-                    <h5>${stepLabel} ${stepCounter}</h5>
+                    <h5 class="mb-0"><span class="step-handle"><i class="bi bi-grip-vertical"></i></span>${stepLabel} <span class="step-number">${stepCounter}</span></h5>
 
-                    <button type="button" class="btn btn-sm btn-danger remove-step">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-step" aria-label="{% translate 'Remove step' %}">
                         <i class="bi bi-trash"></i>
                     </button>
 
                 </div>
 
-                <div class="row">
+                <div class="row g-3">
 
                     <div class="col-md-4">
                         <label class="form-label">${nameLabel}</label>
@@ -96,6 +125,7 @@ function renderStep(step = null) {
     document
         .getElementById("steps-container")
         .insertAdjacentHTML("beforeend", html);
+    updateStepNumbers();
 }
 
 // init existing steps
@@ -108,13 +138,18 @@ if (stepsData.length > 0) {
 // add new step
 document
     .getElementById("add-step-btn")
-    .addEventListener("click", () => renderStep());
+    .addEventListener("click", () => {
+        renderStep();
+        document.querySelector(".step-item:last-child input").focus({preventScroll: true});
+        document.querySelector(".step-item:last-child").scrollIntoView({behavior: "smooth", block: "center"});
+    });
 
 // remove step
-document.addEventListener("click", function(e) {
-    if (e.target.classList.contains("remove-step")) {
-        e.target.closest(".step-item").remove();
-    }
+document.addEventListener("click", function(event) {
+    const removeButton = event.target.closest(".remove-step");
+    if (!removeButton) return;
+    removeButton.closest(".step-item").remove();
+    updateStepNumbers();
 });
 
     </script>

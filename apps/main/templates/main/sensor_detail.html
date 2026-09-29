@@ -1,50 +1,127 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block meta %}
-    <meta http-equiv="refresh" content="3">
-{% endblock meta %}
 {% block title %}
     {{ sensor.name }}
 {% endblock title %}
 {% block content %}
-    <div class="container">
-        <h2>{{ sensor.name }} ({{ sensor.key }})</h2>
-        <canvas id="chart"></canvas>
+    <div class="page-shell">
+        <a href="{% url 'brewery-list' %}" class="back-link"><i class="bi bi-arrow-left"></i> {% translate "Breweries" %}</a>
+        <div class="page-heading mt-3 mb-4">
+            <div>
+                <span class="eyebrow">{% translate "Sensor telemetry" %}</span>
+                <h1 class="mb-1">{{ sensor.name }}</h1>
+                <code class="text-body-secondary">{{ sensor.key }}</code>
+            </div>
+            <div class="reading-status {% if telemetry_is_live %}reading-live{% elif latest_telemetry %}reading-history{% else %}reading-empty{% endif %} js-sensor-reading">
+                {% if latest_telemetry %}
+                    <span class="reading-value">{{ latest_telemetry.value }} {{ sensor.unit }}</span>
+                    <span class="reading-meta">
+                        {% if telemetry_is_live %}
+                            <i class="bi bi-broadcast"></i> {% translate "Live" %}
+                        {% else %}
+                            <i class="bi bi-clock-history"></i> {% translate "Last reading" %} · {{ latest_telemetry.created_at|date:"H:i:s" }}
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="reading-meta"><i class="bi bi-slash-circle"></i> {% translate "No data" %}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card app-card">
+            <div class="card-body p-3 p-md-4">
+                <div class="chart-shell chart-shell-lg">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <details class="danger-zone mt-4">
+            <summary>
+                <span><i class="bi bi-database-x me-2"></i>{% translate "Data retention" %}</span>
+                <small>{% translate "Clean old sensor history" %}</small>
+            </summary>
+            <div class="danger-zone-body">
+                <h5>{% translate "Clean sensor history" %}</h5>
+                <p class="text-body-secondary">
+                    {% translate "Choose what data should be kept. Older records will be permanently deleted." %}
+                </p>
+                <form method="post"
+                      action="{% url 'sensor-cleanup' sensor.id %}"
+                      class="row g-3 align-items-end retention-form"
+                      onsubmit="return confirm('{% translate "Delete old sensor data?" %}')">
+                    {% csrf_token %}
+                    <div class="col-lg-6">
+                        <label class="form-label" for="{{ cleanup_form.strategy.id_for_label }}">{% translate "Retention mode" %}</label>
+                        {{ cleanup_form.strategy }}
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label" for="{{ cleanup_form.amount.id_for_label }}">{{ cleanup_form.amount.label }}</label>
+                        {{ cleanup_form.amount }}
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="bi bi-trash"></i> {% translate "Clean" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </details>
     </div>
+    <div data-page-poller data-poll-interval="3000" data-poll-active="true"></div>
+    {{ chart_data|json_script:"sensor-chart-data" }}
     <script>
-  const labels = [
-      {% for t in telemetry %}
-          "{{ t.created_at|date:'H:i:s' }}",
-      {% endfor %}
-  ];
-
-  const values = [
-      {% for t in telemetry %}
-          {{ t.value }},
-      {% endfor %}
-  ];
+  const initialChartData = JSON.parse(document.getElementById("sensor-chart-data").textContent);
 
   const ctx = document.getElementById('chart');
 
-  new Chart(ctx, {
+  const sensorChart = new Chart(ctx, {
       type: 'line',
       data: {
-          labels: labels,
+          labels: initialChartData.labels,
           datasets: [{
               label: '{{ sensor.get_kind_display }}',
-              data: values,
+              data: initialChartData.values,
               borderWidth: 2,
               tension: 0.3
           }]
       },
       options: {
           responsive: true,
+          maintainAspectRatio: false,
+          interaction: {mode: 'index', intersect: false},
+          plugins: {
+              legend: {display: false}
+          },
+          elements: {
+              line: {borderWidth: 2, tension: 0.35},
+              point: {radius: 0, hoverRadius: 4}
+          },
           scales: {
+              x: {grid: {display: false}},
               y: {
-                  beginAtZero: false
+                  beginAtZero: false,
+                  grid: {color: 'rgba(255, 255, 255, 0.08)'}
               }
           }
       }
   });
+
+  document.addEventListener("page:poll", (event) => {
+      const nextReading = event.detail.document.querySelector(".js-sensor-reading");
+      const currentReading = document.querySelector(".js-sensor-reading");
+      if (nextReading && currentReading) {
+          currentReading.className = nextReading.className;
+          currentReading.innerHTML = nextReading.innerHTML;
+      }
+      const dataElement = event.detail.document.getElementById("sensor-chart-data");
+      if (!dataElement) return;
+      const chartData = JSON.parse(dataElement.textContent);
+      sensorChart.data.labels = chartData.labels;
+      sensorChart.data.datasets[0].data = chartData.values;
+      sensorChart.update("none");
+  });
     </script>
 {% endblock content %}
+{% block extra_js %}
+    {% load static %}
+    <script src="{% static 'js/page-poller.js' %}"></script>
+{% endblock extra_js %}

@@ -13,7 +13,13 @@ payload = {
             "key": "mash_temperature_sensor",
             "kind": "temperature",
             "unit": "°C",
-            "name": "Temperature sensor"
+            "name": "Mash temperature"
+        },
+        {
+            "key": "cooling_temperature_sensor",
+            "kind": "temperature",
+            "unit": "°C",
+            "name": "Cooling temperature"
         },
         {
             "key": "input_voltage_sensor",
@@ -32,3 +38,4 @@ r = requests.post(
 
 print(r.status_code)
 print(r.text)
+r.raise_for_status()

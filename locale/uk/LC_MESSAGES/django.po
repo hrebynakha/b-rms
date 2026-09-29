@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: B-RMS\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 20:28+0300\n"
+"POT-Creation-Date: 2026-09-29 20:49+0300\n"
 "PO-Revision-Date: 2026-09-29 20:28+0300\n"
 "Language-Team: Ukrainian\n"
 "Language: uk\n"
@@ -64,7 +64,8 @@ msgid "Running"
 msgstr "Виконується"
 
 #: apps/main/models/session.py:8
-#: apps/main/templates/main/brew_session_detail.html:44
+#: apps/main/templates/main/brew_session_detail.html:63
+#: apps/main/templates/main/brew_session_detail.html:82
 msgid "Completed"
 msgstr "Завершено"
 
@@ -72,25 +73,23 @@ msgstr "Завершено"
 msgid "Failed"
 msgstr "Помилка"
 
-#: apps/main/services/session_engine.py:15
-msgid "Mash in"
-msgstr "Затирання"
-
-#: apps/main/services/session_engine.py:16
-msgid "Mash rest"
-msgstr "Пауза затирання"
-
-#: apps/main/services/session_engine.py:17
-msgid "Mash out"
-msgstr "Мешаут"
-
-#: apps/main/services/session_engine.py:68
+#: apps/main/services/session_engine.py:69
 msgid "Only a pending brew session can be started."
 msgstr "Запустити можна лише сесію, що очікує."
 
-#: apps/main/services/session_engine.py:79
+#: apps/main/services/session_engine.py:73
+msgid "The selected recipe has no steps with a duration."
+msgstr "У вибраному рецепті немає етапів із заданою тривалістю."
+
+#: apps/main/services/session_engine.py:84
 msgid "This brewery already has a running brew session."
 msgstr "У цій броварні вже виконується сесія варіння."
+
+#: apps/main/services/session_engine.py
+#: apps/main/templates/main/brew_session_detail.html
+#: apps/main/templates/main/brewery_list.html
+msgid "Demo scripts are inactive. Start the ESP32 and telemetry scripts."
+msgstr "Демо-скрипти неактивні. Запустіть скрипти ESP32 і телеметрії."
 
 #: apps/main/templates/main/brew_session_detail.html:4
 msgid "Brew Session"
@@ -100,34 +99,49 @@ msgstr "Сесія варіння"
 msgid "Status"
 msgstr "Статус"
 
-#: apps/main/templates/main/brew_session_detail.html:22
-#: apps/main/templates/main/brewery_list.html:48
+#: apps/main/templates/main/brew_session_detail.html:37
+#: apps/main/templates/main/brewery_list.html:49
 msgid "Could not start session."
 msgstr "Не вдалося запустити сесію."
 
-#: apps/main/templates/main/brew_session_detail.html:23
-#: apps/main/templates/main/brewery_list.html:49
+#: apps/main/templates/main/brew_session_detail.html:38
+#: apps/main/templates/main/brewery_list.html:50
 msgid "Start 3-minute demo"
 msgstr "Запустити 3-хвилинне демо"
 
-#: apps/main/templates/main/brew_session_detail.html:31
+#: apps/main/templates/main/brew_session_detail.html:46
 msgid "Current Step"
 msgstr "Поточний етап"
 
-#: apps/main/templates/main/brew_session_detail.html:34
+#: apps/main/templates/main/brew_session_detail.html:49
+#, python-format
+msgid "Step %(current)s / %(total)s"
+msgstr "Етап %(current)s / %(total)s"
+
+#: apps/main/templates/main/brew_session_detail.html:51
+#: apps/main/templates/main/brewery_list.html:63
+#, python-format
+msgid "Until the next step: %(minutes)s min %(seconds)s sec"
+msgstr "До наступного етапу: %(minutes)s хв %(seconds)s с"
+
+#: apps/main/templates/main/brew_session_detail.html:53
 #, python-format
 msgid "%(seconds)ss left in demo"
 msgstr "У демо залишилося %(seconds)s с"
 
-#: apps/main/templates/main/brew_session_detail.html:42
-#: apps/main/templates/main/brew_session_detail.html:62
+#: apps/main/templates/main/brew_session_detail.html:61
+#: apps/main/templates/main/brew_session_detail.html:95
 #, python-format
 msgid "%(minutes)s min"
 msgstr "%(minutes)s хв"
 
-#: apps/main/templates/main/brew_session_detail.html:52
+#: apps/main/templates/main/brew_session_detail.html:71
 msgid "Recipe Steps"
 msgstr "Етапи рецепта"
+
+#: apps/main/templates/main/brew_session_detail.html:88
+msgid "In progress"
+msgstr "Виконується"
 
 #: apps/main/templates/main/brew_session_form.html:4
 #: apps/main/templates/main/brew_session_form.html:7
@@ -147,19 +161,19 @@ msgstr "Сесії варіння"
 msgid "New Session"
 msgstr "Нова сесія"
 
-#: apps/main/templates/main/brew_session_list.html:24
+#: apps/main/templates/main/brew_session_list.html:31
 msgid "Brewery:"
 msgstr "Броварня:"
 
-#: apps/main/templates/main/brew_session_list.html:28
+#: apps/main/templates/main/brew_session_list.html:35
 msgid "Step:"
 msgstr "Етап:"
 
-#: apps/main/templates/main/brew_session_list.html:33
+#: apps/main/templates/main/brew_session_list.html:40
 msgid "Open"
 msgstr "Відкрити"
 
-#: apps/main/templates/main/brew_session_list.html:38
+#: apps/main/templates/main/brew_session_list.html:45
 msgid "No brew sessions"
 msgstr "Сесій варіння немає"
 
@@ -172,72 +186,77 @@ msgstr "Броварні"
 msgid "Active brew session"
 msgstr "Активна сесія варіння"
 
-#: apps/main/templates/main/brewery_list.html:42
+#: apps/main/templates/main/brewery_list.html:43
 msgid "Details"
 msgstr "Докладніше"
 
-#: apps/main/templates/main/brewery_list.html:55
+#: apps/main/templates/main/brewery_list.html:58
+#, python-format
+msgid "step %(current)s / %(total)s"
+msgstr "етап %(current)s / %(total)s"
+
+#: apps/main/templates/main/brewery_list.html:60
 #, python-format
 msgid "%(seconds)ss left"
 msgstr "Залишилося %(seconds)s с"
 
-#: apps/main/templates/main/brewery_list.html:57
+#: apps/main/templates/main/brewery_list.html:65
 msgid "Demo mash progress"
 msgstr "Перебіг демонстраційного затирання"
 
-#: apps/main/templates/main/brewery_list.html:68
+#: apps/main/templates/main/brewery_list.html:76
 msgid "Controllers"
 msgstr "Контролери"
 
-#: apps/main/templates/main/brewery_list.html:79
+#: apps/main/templates/main/brewery_list.html:87
 msgid "ONLINE"
 msgstr "У МЕРЕЖІ"
 
-#: apps/main/templates/main/brewery_list.html:81
+#: apps/main/templates/main/brewery_list.html:89
 msgid "OFFLINE"
 msgstr "НЕ В МЕРЕЖІ"
 
-#: apps/main/templates/main/brewery_list.html:93
+#: apps/main/templates/main/brewery_list.html:101
 msgid "View history"
 msgstr "Переглянути історію"
 
-#: apps/main/templates/main/brewery_list.html:100
+#: apps/main/templates/main/brewery_list.html:108
 msgid "No telemetry"
 msgstr "Телеметрії немає"
 
-#: apps/main/templates/main/brewery_list.html:116
+#: apps/main/templates/main/brewery_list.html:124
 msgid "Delete brewery"
 msgstr "Видалити броварню"
 
-#: apps/main/templates/main/brewery_list.html:120
+#: apps/main/templates/main/brewery_list.html:128
 msgid "Close"
 msgstr "Закрити"
 
-#: apps/main/templates/main/brewery_list.html:126
+#: apps/main/templates/main/brewery_list.html:134
 #, python-format
 msgid "Are you sure you want to delete <strong>%(brewery_name)s</strong>?"
 msgstr "Ви впевнені, що хочете видалити <strong>%(brewery_name)s</strong>?"
 
-#: apps/main/templates/main/brewery_list.html:127
+#: apps/main/templates/main/brewery_list.html:135
 #: apps/main/templates/main/recipe_list.html:75
 msgid "This action cannot be undone."
 msgstr "Цю дію неможливо скасувати."
 
-#: apps/main/templates/main/brewery_list.html:130
+#: apps/main/templates/main/brewery_list.html:138
 #: apps/main/templates/main/recipe_list.html:78
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: apps/main/templates/main/brewery_list.html:131
+#: apps/main/templates/main/brewery_list.html:139
 #: apps/main/templates/main/recipe_list.html:79
 msgid "Delete"
 msgstr "Видалити"
 
-#: apps/main/templates/main/brewery_list.html:138
+#: apps/main/templates/main/brewery_list.html:146
 msgid "No controllers"
 msgstr "Контролерів немає"
 
-#: apps/main/templates/main/brewery_list.html:143
+#: apps/main/templates/main/brewery_list.html:151
 msgid "No breweries registered"
 msgstr "Немає зареєстрованих броварень"
 
@@ -352,3 +371,137 @@ msgstr "броварня, віддалене керування, система"
 #: templates/base.html:43
 msgid "Language"
 msgstr "Мова"
+
+msgid "Paused"
+msgstr "Призупинено"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Resume"
+msgstr "Продовжити"
+
+msgid "Only a running session can be paused."
+msgstr "Призупинити можна лише активну сесію."
+
+msgid "The session has already completed."
+msgstr "Сесію вже завершено."
+
+msgid "Only a paused session can be resumed."
+msgstr "Продовжити можна лише призупинену сесію."
+
+msgid "Session temperatures"
+msgstr "Температури сесії"
+
+#, python-format
+msgid "Current temperature %(current)s°C has not reached the target %(target)s°C."
+msgstr "Поточна температура %(current)s°C ще не досягла цільових %(target)s°C."
+
+msgid "Delete this completed session?"
+msgstr "Видалити цю завершену сесію?"
+
+msgid "Completed brew session deleted."
+msgstr "Завершену сесію варіння видалено."
+
+msgid "Only completed brew sessions can be deleted."
+msgstr "Видаляти можна лише завершені сесії варіння."
+
+msgid "Keep the last N minutes"
+msgstr "Залишити останні N хвилин"
+
+msgid "Keep the last N brew sessions"
+msgstr "Залишити останні N сесій варіння"
+
+msgid "Clean sensor history"
+msgstr "Очистити історію датчика"
+
+msgid "Choose what data should be kept. Older records will be permanently deleted."
+msgstr "Виберіть, які дані залишити. Старіші записи буде остаточно видалено."
+
+msgid "Retention mode"
+msgstr "Режим зберігання"
+
+msgid "Clean"
+msgstr "Очистити"
+
+msgid "Delete old sensor data?"
+msgstr "Видалити старі дані датчика?"
+
+msgid "Invalid telemetry cleanup parameters."
+msgstr "Некоректні параметри очищення телеметрії."
+
+msgid "There are no brew sessions to preserve."
+msgstr "Немає сесій варіння, дані яких можна зберегти."
+
+#, python-format
+msgid "Deleted %(count)s telemetry records."
+msgstr "Видалено записів телеметрії: %(count)s."
+
+msgid "Toggle navigation"
+msgstr "Перемкнути навігацію"
+
+msgid "Brew workflow"
+msgstr "Процес варіння"
+
+msgid "Choose a brewery and recipe before starting the demo."
+msgstr "Виберіть броварню та рецепт перед запуском демо."
+
+msgid "Recipe builder"
+msgstr "Конструктор рецептів"
+
+msgid "Build the mash schedule step by step."
+msgstr "Складіть програму затирання крок за кроком."
+
+msgid "Remove step"
+msgstr "Видалити крок"
+
+msgid "steps"
+msgstr "кроків"
+
+msgid "History and progress"
+msgstr "Історія та прогрес"
+
+msgid "Open session"
+msgstr "Відкрити сесію"
+
+msgid "More actions"
+msgstr "Інші дії"
+
+msgid "Delete session"
+msgstr "Видалити сесію"
+
+msgid "Sensor telemetry"
+msgstr "Телеметрія датчика"
+
+msgid "Data retention"
+msgstr "Зберігання даних"
+
+msgid "Clean old sensor history"
+msgstr "Очистити стару історію датчика"
+
+msgid "Live readings recorded during this session"
+msgstr "Поточні показники, записані під час цієї сесії"
+
+msgid "Temperature data will appear after the session starts."
+msgstr "Дані температури з’являться після запуску сесії."
+
+msgid "Edit recipe"
+msgstr "Редагувати рецепт"
+
+msgid "Live"
+msgstr "Наживо"
+
+msgid "Last reading"
+msgstr "Останній показник"
+
+msgid "No data"
+msgstr "Немає даних"
+
+#~ msgid "Mash in"
+#~ msgstr "Затирання"
+
+#~ msgid "Mash rest"
+#~ msgstr "Пауза затирання"
+
+#~ msgid "Mash out"
+#~ msgstr "Мешаут"

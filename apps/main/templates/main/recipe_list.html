@@ -37,20 +37,31 @@
                                     <h4 class="card-title mb-0">{{ recipe.name }}</h4>
                                     <span class="badge bg-dark">{% blocktranslate count step_count=recipe.steps.count %}{{ step_count }} step{% plural %}{{ step_count }} steps{% endblocktranslate %}</span>
                                 </div>
-                                <p class="text-light-emphasis flex-grow-1">{{ recipe.description|default:_('No description') }}</p>
+                                <p class="text-light-emphasis flex-grow-1">{{ recipe.description|default:_("No description") }}</p>
                                 <div class="small text-muted mb-3">
                                     {% translate "Created:" %}
                                     {{ recipe.created_at|date:"d M Y" }}
                                 </div>
-                                <div class="d-flex gap-2">
+                                <div class="d-flex gap-2 mt-auto">
                                     <a href="{% url 'recipe-edit' recipe.id %}"
-                                       class="btn btn-outline-light btn-sm">{% translate "Edit" %}</a>
-                                    <button type="button"
-                                            class="btn btn-danger btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#deleteRecipeModal{{ recipe.id }}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                       class="btn btn-outline-light flex-grow-1">{% translate "Edit recipe" %}</a>
+                                    <div class="dropdown">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                aria-label="{% translate 'More actions' %}">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end p-2">
+                                            <button type="button"
+                                                    class="dropdown-item text-danger rounded"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteRecipeModal{{ recipe.id }}">
+                                                <i class="bi bi-trash me-2"></i>{% translate "Delete recipe" %}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

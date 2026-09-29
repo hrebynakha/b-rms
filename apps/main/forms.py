@@ -43,6 +43,10 @@ class BrewSessionForm(forms.ModelForm):
             "brewery": _("Brewery"),
             "recipe": _("Recipe"),
         }
+        widgets = {
+            "brewery": forms.Select(attrs={"class": "form-select form-select-lg"}),
+            "recipe": forms.Select(attrs={"class": "form-select form-select-lg"}),
+        }
 
 
 class BreweryDeleteForm(forms.Form):
@@ -51,3 +55,20 @@ class BreweryDeleteForm(forms.Form):
 
 class RecipeDeleteForm(forms.Form):
     recipe_id = forms.IntegerField(widget=forms.HiddenInput())
+
+
+class TelemetryCleanupForm(forms.Form):
+    strategy = forms.ChoiceField(
+        choices=[
+            ("minutes", _("Keep the last N minutes")),
+            ("sessions", _("Keep the last N brew sessions")),
+        ],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    amount = forms.IntegerField(
+        min_value=1,
+        max_value=10080,
+        initial=60,
+        label=_("N"),
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )

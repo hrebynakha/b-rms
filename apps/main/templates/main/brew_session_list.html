@@ -4,33 +4,67 @@
     {% translate "Brew Sessions" %}
 {% endblock title %}
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% translate "Brew Sessions" %}</h1>
+    <div class="page-heading mb-4">
+        <div>
+            <span class="eyebrow">{% translate "History and progress" %}</span>
+            <h1 class="mb-0">{% translate "Brew Sessions" %}</h1>
+        </div>
         <a href="{% url 'brew-session-create' %}" class="btn btn-primary">
             <i class="bi bi-plus-lg"></i>
             {% translate "New Session" %}
         </a>
     </div>
-    <div class="row g-3">
+    <div class="row g-4">
         {% for session in sessions %}
-            <div class="col-md-6">
-                <div class="card bg-secondary">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <h5>{{ session.recipe.name }}</h5>
-                            <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.get_status_display }}</span>
+            <div class="col-md-6 col-xl-4">
+                <div class="card app-card session-card h-100">
+                    <div class="card-body d-flex flex-column p-4">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="text-body-secondary small mb-1">{{ session.brewery.name }}</div>
+                                <h4 class="mb-0">{{ session.recipe.name }}</h4>
+                            </div>
+                            <span class="badge d-inline-flex align-items-center gap-2 p-2 {% if session.status == 'pending' %}bg-warning text-dark {% elif session.status == 'running' %}bg-primary {% elif session.status == 'paused' %}bg-info text-dark {% elif session.status == 'completed' %}bg-success {% else %}bg-danger{% endif %}">
+                                {% if session.status == "running" %}<span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>{% endif %}
+                                {{ session.get_status_display }}
+                            </span>
                         </div>
-                        <div>
-                            {% translate "Brewery:" %}
-                            {{ session.brewery.name }}
+                        <div class="session-meta mb-4">
+                            <div>
+                                <i class="bi bi-list-ol"></i>
+                                <span>{% translate "Step" %} {{ session.current_step_index }}</span>
+                            </div>
+                            <div>
+                                <i class="bi bi-calendar3"></i>
+                                <span>{{ session.created_at|date:"d M Y, H:i" }}</span>
+                            </div>
                         </div>
-                        <div>
-                            {% translate "Step:" %}
-                            {{ session.current_step_index }}
+                        <div class="d-flex gap-2 mt-auto">
+                            <a href="{% url 'brew-session-detail' session.id %}"
+                               class="btn btn-outline-light flex-grow-1">{% translate "Open session" %}</a>
+                            {% if session.status == "completed" %}
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            aria-label="{% translate 'More actions' %}">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end p-2">
+                                        <form method="post"
+                                              action="{% url 'brew-session-delete' %}"
+                                              onsubmit="return confirm('{% translate "Delete this completed session?" %}')">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="session_id" value="{{ session.id }}">
+                                            <button type="submit" class="dropdown-item text-danger rounded">
+                                                <i class="bi bi-trash me-2"></i>{% translate "Delete session" %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="small text-muted mt-2">{{ session.created_at }}</div>
-                        <a href="{% url 'brew-session-detail' session.id %}"
-                           class="btn btn-outline-light btn-sm mt-3">{% translate "Open" %}</a>
                     </div>
                 </div>
             </div>

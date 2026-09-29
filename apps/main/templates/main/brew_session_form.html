@@ -4,14 +4,45 @@
     {% translate "New Brew Session" %}
 {% endblock title %}
 {% block content %}
-    <h1 class="mb-4">{% translate "New Brew Session" %}</h1>
-    <form method="post">
-        {% csrf_token %}
-        <div class="card bg-secondary">
-            <div class="card-body">
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-success">{% translate "Create Session" %}</button>
+    <div class="page-shell page-shell-sm">
+        <a href="{% url 'brew-session-list' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i> {% translate "Brew Sessions" %}
+        </a>
+        <div class="page-heading mt-3 mb-4">
+            <div>
+                <span class="eyebrow">{% translate "Brew workflow" %}</span>
+                <h1 class="mb-1">{% translate "New Brew Session" %}</h1>
+                <p class="text-body-secondary mb-0">{% translate "Choose a brewery and recipe before starting the demo." %}</p>
             </div>
         </div>
-    </form>
+        <form method="post">
+            {% csrf_token %}
+            <div class="card app-card session-create-card">
+                <div class="card-body p-4 p-md-5">
+                    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" for="{{ form.brewery.id_for_label }}">
+                            <i class="bi bi-buildings me-1 text-primary"></i> {{ form.brewery.label }}
+                        </label>
+                        {{ form.brewery }}
+                        {{ form.brewery.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" for="{{ form.recipe.id_for_label }}">
+                            <i class="bi bi-journal-text me-1 text-primary"></i> {{ form.recipe.label }}
+                        </label>
+                        {{ form.recipe }}
+                        {{ form.recipe.errors }}
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end pt-3 border-top">
+                        <a href="{% url 'brew-session-list' %}"
+                           class="btn btn-outline-secondary">{% translate "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            {% translate "Create Session" %} <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 {% endblock content %}

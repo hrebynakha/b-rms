@@ -5,10 +5,13 @@
     "editor.defaultFormatter": "monosans.djlint"
   },
   "files.associations": {
-    "*.html": "jinja-html"
+    "**/templates/**/*.html": "django-html",
+    "*.jinja": "django-html",
+    "*.jinja2": "django-html"
   },
-  "cSpell.words": [
-    "endfor",
-    "endwith"
-  ]
+  "[django-html]": {
+    "editor.defaultFormatter": "monosans.djlint",
+    "editor.formatOnSave": true
+  },
+  "cSpell.words": ["endfor", "endwith"]
 }
