@@ -47,7 +47,9 @@
                 <form method="post"
                       action="{% url 'sensor-cleanup' sensor.id %}"
                       class="row g-3 align-items-end retention-form"
-                      onsubmit="return confirm('{% translate "Delete old sensor data?" %}')">
+                      data-confirm-message="{% translate "Delete old sensor data?" %}"
+                      data-confirm-title="{% translate "Clean sensor history" %}"
+                      data-confirm-label="{% translate "Clean" %}">
                     {% csrf_token %}
                     <div class="col-lg-6">
                         <label class="form-label" for="{{ cleanup_form.strategy.id_for_label }}">{% translate "Retention mode" %}</label>

@@ -23,8 +23,9 @@
                             <div>
                                 <div class="text-body-secondary small mb-1">{{ session.brewery.name }}</div>
                                 <h4 class="mb-0">{{ session.recipe.name }}</h4>
+                                <small class="text-body-secondary">{{ session.get_mode_display }}</small>
                             </div>
-                            <span class="badge d-inline-flex align-items-center gap-2 p-2 {% if session.status == 'pending' %}bg-warning text-dark {% elif session.status == 'running' %}bg-primary {% elif session.status == 'paused' %}bg-info text-dark {% elif session.status == 'completed' %}bg-success {% else %}bg-danger{% endif %}">
+                            <span class="badge d-inline-flex align-items-center gap-2 p-2 {% if session.status == 'pending' %}bg-warning text-dark {% elif session.status == 'running' %}bg-primary {% elif session.status == 'heating' %}bg-info text-dark {% elif session.status == 'waiting_temperature' %}bg-warning text-dark {% elif session.status == 'paused' %}bg-info text-dark {% elif session.status == 'completed' %}bg-success {% else %}bg-danger{% endif %}">
                                 {% if session.status == "running" %}<span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>{% endif %}
                                 {{ session.get_status_display }}
                             </span>
@@ -54,7 +55,9 @@
                                     <div class="dropdown-menu dropdown-menu-end p-2">
                                         <form method="post"
                                               action="{% url 'brew-session-delete' %}"
-                                              onsubmit="return confirm('{% translate "Delete this completed session?" %}')">
+                                              data-confirm-message="{% translate 'Delete this completed session?' %}"
+                                              data-confirm-title="{% translate 'Delete session' %}"
+                                              data-confirm-label="{% translate 'Delete' %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="session_id" value="{{ session.id }}">
                                             <button type="submit" class="dropdown-item text-danger rounded">

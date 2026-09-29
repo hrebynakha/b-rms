@@ -121,6 +121,32 @@
         color: #64748b;
         font-size: 0.8rem;
       }
+
+      dialog {
+        width: min(420px, calc(100% - 32px));
+        margin: auto;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        background: var(--card);
+        color: var(--text);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      }
+
+      dialog::backdrop {
+        background: rgba(2, 6, 23, 0.72);
+        backdrop-filter: blur(4px);
+      }
+
+      dialog h2 {
+        margin-bottom: 10px;
+      }
+
+      dialog p {
+        margin-bottom: 22px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
     </style>
   </head>
   <body>
@@ -159,6 +185,13 @@
         <div class="version">Контролер B-RMS v1.0</div>
       </div>
     </div>
+    <dialog id="saved-modal">
+      <h2>Налаштування збережено</h2>
+      <p>Контролер застосує нові параметри та перезавантажиться.</p>
+      <form method="dialog">
+        <button type="submit">Зрозуміло</button>
+      </form>
+    </dialog>
       <script>
         async function saveConfig() {
 
@@ -174,7 +207,7 @@
                 })
             });
 
-            alert("Налаштування збережено. Пристрій перезавантажиться.");
+            document.getElementById("saved-modal").showModal();
         }    
 </script>
   </body>

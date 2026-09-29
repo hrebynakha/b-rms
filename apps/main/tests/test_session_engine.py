@@ -12,7 +12,8 @@ from apps.main.models import (
     Sensor,
     Telemetry,
 )
-from apps.main.models.session import BrewSession, BrewSessionStatus
+from apps.main.models.session import BrewSession, BrewSessionMode, BrewSessionStatus
+from apps.main.models.recipe import RecipeStepMode
 from apps.main.services.session_engine import (
     SessionStartError,
     demo_hardware_is_ready,
@@ -66,7 +67,7 @@ class SessionEngineTests(TestCase):
         )
         self.telemetry = Telemetry.objects.create(
             sensor=self.temperature_sensor,
-            value=62.0,
+            value=50.0,
         )
 
     def test_start_session_initializes_demo_cycle(self):
@@ -82,16 +83,128 @@ class SessionEngineTests(TestCase):
         self.assertEqual(progress.step_remaining_seconds, 60)
         self.assertEqual(progress.remaining_seconds, 180)
 
+    def test_reach_temperature_step_waits_without_starting_timer(self):
+        step = self.recipe.steps.first()
+        step.mode = RecipeStepMode.REACH_TEMPERATURE
+        step.target_temperature = 68
+        step.duration_minutes = 0
+        step.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(value=48.0)
+
+        session, progress = start_session(self.session.id)
+
+        self.assertEqual(session.status, BrewSessionStatus.HEATING)
+        self.assertEqual(session.current_step_index, 0)
+        self.assertEqual(session.step_elapsed_seconds, 0)
+        self.assertIsNone(session.step_started_at)
+        self.assertFalse(progress.waiting_for_temperature)
+        self.assertEqual(progress.step_duration_seconds, 0)
+
+    def test_reach_temperature_step_advances_as_soon_as_target_is_reached(self):
+        step = self.recipe.steps.first()
+        step.mode = RecipeStepMode.REACH_TEMPERATURE
+        step.target_temperature = 68
+        step.duration_minutes = 0
+        step.save()
+        now = timezone.now()
+        self.session.status = BrewSessionStatus.HEATING
+        self.session.started_at = now
+        self.session.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(value=68.0, created_at=now)
+
+        progress = refresh_session(self.session, now=now)
+
+        self.assertEqual(self.session.current_step_index, 1)
+        self.assertEqual(progress.step_name, "Mash rest")
+        self.assertEqual(self.session.step_elapsed_seconds, 0)
+
     def test_running_session_moves_to_next_step_after_one_minute(self):
         started_at = timezone.now() - timedelta(seconds=61)
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = started_at
+        self.session.step_started_at = started_at
         self.session.save()
 
         progress = refresh_session(self.session, now=started_at + timedelta(seconds=61))
 
         self.assertEqual(progress.step_name, "Mash rest")
         self.assertEqual(self.session.current_step_index, 1)
+
+    def test_next_step_waits_until_its_target_temperature_is_reached(self):
+        started_at = timezone.now()
+        self.session.status = BrewSessionStatus.RUNNING
+        self.session.started_at = started_at
+        self.session.step_started_at = started_at
+        self.session.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=61), value=50.0
+        )
+        refresh_session(
+            self.session, now=started_at + timedelta(seconds=61)
+        )
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(value=62.0)
+        waiting = refresh_session(
+            self.session, now=started_at + timedelta(seconds=61)
+        )
+
+        self.assertEqual(self.session.current_step_index, 1)
+        self.assertTrue(waiting.waiting_for_temperature)
+        self.assertEqual(waiting.current_temperature, 62.0)
+        self.assertEqual(waiting.target_temperature, 65.0)
+
+        hot_reading = Telemetry.objects.create(
+            sensor=self.temperature_sensor,
+            value=65.0,
+        )
+        Telemetry.objects.filter(pk=hot_reading.pk).update(
+            created_at=started_at + timedelta(seconds=70)
+        )
+        confirmed = refresh_session(
+            self.session, now=started_at + timedelta(seconds=70)
+        )
+
+        self.assertFalse(confirmed.waiting_for_temperature)
+        self.assertEqual(self.session.step_started_at, started_at + timedelta(seconds=70))
+
+    def test_temperature_above_allowed_range_also_pauses_the_step(self):
+        started_at = timezone.now()
+        self.session.status = BrewSessionStatus.RUNNING
+        self.session.started_at = started_at
+        self.session.step_started_at = started_at
+        self.session.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=90), value=50.0
+        )
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=10),
+            value=55.0,
+        )
+
+        progress = refresh_session(
+            self.session, now=started_at + timedelta(seconds=10)
+        )
+
+        self.assertEqual(self.session.status, BrewSessionStatus.WAITING)
+        self.assertTrue(progress.waiting_for_temperature)
+        self.assertEqual(self.session.step_elapsed_seconds, 10)
+
+    def test_standard_mode_uses_recipe_step_minutes(self):
+        started_at = timezone.now()
+        self.session.mode = BrewSessionMode.STANDARD
+        self.session.status = BrewSessionStatus.RUNNING
+        self.session.started_at = started_at
+        self.session.step_started_at = started_at
+        self.session.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=60), value=50.0
+        )
+
+        progress = refresh_session(
+            self.session, now=started_at + timedelta(seconds=61)
+        )
+
+        self.assertEqual(self.session.current_step_index, 0)
+        self.assertEqual(progress.step_remaining_seconds, 20 * 60 - 61)
 
     def test_demo_time_is_split_proportionally_between_recipe_steps(self):
         self.recipe.steps.all().delete()
@@ -112,7 +225,12 @@ class SessionEngineTests(TestCase):
         started_at = timezone.now()
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = started_at
+        self.session.step_started_at = started_at
         self.session.save()
+
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=90), value=50.0
+        )
 
         before_boundary = refresh_session(
             self.session, now=started_at + timedelta(seconds=89)
@@ -148,7 +266,12 @@ class SessionEngineTests(TestCase):
         started_at = timezone.now()
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = started_at
+        self.session.step_started_at = started_at
         self.session.save()
+
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=60), value=50.0
+        )
 
         progress = refresh_session(
             self.session, now=started_at + timedelta(seconds=60)
@@ -162,7 +285,12 @@ class SessionEngineTests(TestCase):
         started_at = timezone.now() - timedelta(minutes=3)
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = started_at
+        self.session.current_step_index = 2
+        self.session.step_started_at = started_at + timedelta(seconds=120)
         self.session.save()
+        Telemetry.objects.filter(pk=self.telemetry.pk).update(
+            created_at=started_at + timedelta(seconds=180), value=78.0
+        )
 
         progress = refresh_session(self.session, now=started_at + timedelta(minutes=3))
 
@@ -175,6 +303,7 @@ class SessionEngineTests(TestCase):
         started_at = timezone.now()
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = started_at
+        self.session.step_started_at = started_at
         self.session.save()
 
         _, paused_progress = pause_session(
@@ -238,6 +367,7 @@ class SessionEngineTests(TestCase):
     def test_session_detail_marks_completed_and_current_steps(self):
         self.session.status = BrewSessionStatus.RUNNING
         self.session.started_at = timezone.now() - timedelta(seconds=61)
+        self.session.step_started_at = self.session.started_at
         self.session.save()
 
         response = self.client.get(
@@ -247,7 +377,7 @@ class SessionEngineTests(TestCase):
         self.assertEqual(response.context["session"].current_step_index, 1)
         self.assertContains(response, "brew-step-completed", count=1)
         self.assertContains(response, "brew-step-current", count=1)
-        self.assertContains(response, "In progress")
+        self.assertContains(response, "Waiting for temperature")
 
     def test_session_detail_warns_when_temperature_is_below_target(self):
         self.session.status = BrewSessionStatus.RUNNING
@@ -259,7 +389,7 @@ class SessionEngineTests(TestCase):
             reverse("brew-session-detail", args=[self.session.id])
         )
 
-        self.assertContains(response, "has not reached the target")
+        self.assertContains(response, "outside the allowed range")
         self.assertContains(response, "session-temperature-chart")
 
     def test_completed_session_can_be_deleted(self):

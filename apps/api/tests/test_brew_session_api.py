@@ -29,7 +29,7 @@ class BrewSessionStartApiTests(TestCase):
             key="mash_temperature_sensor",
             unit="°C",
         )
-        self.telemetry = Telemetry.objects.create(sensor=sensor, value=62.0)
+        self.telemetry = Telemetry.objects.create(sensor=sensor, value=50.0)
         self.url = reverse("api-brew-session-start", args=[self.session.id])
 
     def test_start_endpoint_starts_pending_session(self):
@@ -82,3 +82,22 @@ class BrewSessionStartApiTests(TestCase):
         self.session.refresh_from_db()
         self.assertEqual(resume_response.status_code, 200)
         self.assertEqual(self.session.status, BrewSessionStatus.RUNNING)
+
+    def test_operator_can_override_temperature_wait(self):
+        self.telemetry.value = 40.0
+        self.telemetry.save(update_fields=["value"])
+        self.client.post(self.url)
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.status, BrewSessionStatus.WAITING)
+
+        response = self.client.post(
+            reverse(
+                "api-brew-session-temperature-override",
+                args=[self.session.id],
+            )
+        )
+
+        self.session.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.session.status, BrewSessionStatus.RUNNING)
+        self.assertTrue(self.session.temperature_override)

@@ -497,6 +497,138 @@ msgstr "Останній показник"
 msgid "No data"
 msgstr "Немає даних"
 
+msgid "3-minute demo"
+msgstr "3-хвилинне демо"
+
+msgid "Standard recipe timing"
+msgstr "Стандартний час рецепта"
+
+msgid "Timing mode"
+msgstr "Режим часу"
+
+msgid "Demo compresses the recipe to 3 minutes; standard mode uses the recipe durations."
+msgstr "Демо стискає рецепт до 3 хвилин; стандартний режим використовує тривалість із рецепта."
+
+msgid "Start brew session"
+msgstr "Запустити сесію варіння"
+
+#, python-format
+msgid "Waiting for target temperature: %(current)s°C / %(target)s°C"
+msgstr "Очікування цільової температури: %(current)s°C / %(target)s°C"
+
+msgid "Waiting for fresh temperature data."
+msgstr "Очікування свіжих даних температури."
+
+#, python-format
+msgid "%(seconds)ss of recipe time remaining"
+msgstr "Залишилось %(seconds)s с часу рецепта"
+
+#, python-format
+msgid "Heating: %(current)s°C / %(target)s°C"
+msgstr "Нагрівання: %(current)s°C / %(target)s°C"
+
+#, python-format
+msgid "Current temperature %(current)s°C has not reached the target %(target)s°C. The step timer is waiting."
+msgstr "Поточна температура %(current)s°C ще не досягла цільових %(target)s°C. Таймер етапу очікує."
+
+msgid "Live telemetry"
+msgstr "Телеметрія наживо"
+
+msgid "Each sensor uses its own temperature scale."
+msgstr "Кожен датчик використовує власну шкалу температури."
+
+msgid "Waiting for temperature"
+msgstr "Очікування температури"
+
+msgid "The session is not waiting for temperature."
+msgstr "Сесія не очікує на температуру."
+
+msgid "Continue anyway"
+msgstr "Продовжити попри температуру"
+
+msgid "Continue despite the temperature being outside the allowed range?"
+msgstr "Продовжити, попри вихід температури за допустимий діапазон?"
+
+#, python-format
+msgid "Temperature %(current)s°C is outside the allowed range %(minimum)s–%(maximum)s°C."
+msgstr "Температура %(current)s°C поза допустимим діапазоном %(minimum)s–%(maximum)s°C."
+
+#, python-format
+msgid "Current temperature %(current)s°C is outside the allowed range %(minimum)s–%(maximum)s°C. The step timer is stopped."
+msgstr "Поточна температура %(current)s°C поза допустимим діапазоном %(minimum)s–%(maximum)s°C. Таймер етапу зупинено."
+
+#, python-format
+msgid "Temperature check: %(current)s°C / %(minimum)s–%(maximum)s°C"
+msgstr "Перевірка температури: %(current)s°C / %(minimum)s–%(maximum)s°C"
+
+msgid "Confirm action"
+msgstr "Підтвердьте дію"
+
+msgid "Confirm"
+msgstr "Підтвердити"
+
+msgid "Temperature override"
+msgstr "Ігнорування температурної умови"
+
+msgid "Temperature outside the allowed range"
+msgstr "Температура поза допустимим діапазоном"
+
+msgid "Back to brew sessions"
+msgstr "Назад до сесій варіння"
+
+msgid "Reach temperature"
+msgstr "Досягнення температури"
+
+msgid "Temperature hold"
+msgstr "Температурна пауза"
+
+msgid "Reaching temperature"
+msgstr "Досягнення температури"
+
+msgid "Step type"
+msgstr "Тип етапу"
+
+msgid "Wait for the target, then continue immediately."
+msgstr "Дочекатися цільової температури й одразу перейти далі."
+
+msgid "Keep the temperature in range for the specified time."
+msgstr "Підтримувати температуру в діапазоні протягом заданого часу."
+
+msgid "Skip waiting for the target temperature?"
+msgstr "Пропустити очікування цільової температури?"
+
+msgid "Skip temperature wait"
+msgstr "Пропустити очікування"
+
+msgid "Reaching target"
+msgstr "Досягнення цілі"
+
+msgid "Waiting to reach the target; no timer is running."
+msgstr "Очікуємо цільову температуру; таймер не запущено."
+
+msgid "The selected recipe has no steps."
+msgstr "У вибраному рецепті немає етапів."
+
+#, python-format
+msgid "Current %(current)s°C · waiting for %(target)s°C"
+msgstr "Зараз %(current)s°C · очікуємо %(target)s°C"
+
+#, python-format
+msgid "%(elapsed_minutes)s min %(elapsed_seconds)s sec / %(duration_minutes)s min %(duration_seconds)s sec"
+msgstr "%(elapsed_minutes)s хв %(elapsed_seconds)s с / %(duration_minutes)s хв %(duration_seconds)s с"
+
+#, python-format
+msgid "Duration: %(minutes)s min"
+msgstr "Тривалість: %(minutes)s хв"
+
+#, python-format
+msgid "%(current)s°C; allowed %(minimum)s–%(maximum)s°C. Timer stopped."
+msgstr "%(current)s°C; допустимо %(minimum)s–%(maximum)s°C. Таймер зупинено."
+
+#, python-format
+msgid "%(current)s°C; allowed %(minimum)s–%(maximum)s°C."
+msgstr "%(current)s°C; допустимий діапазон %(minimum)s–%(maximum)s°C."
+
 #~ msgid "Mash in"
 #~ msgstr "Затирання"
 

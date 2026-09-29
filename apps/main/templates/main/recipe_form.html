@@ -68,6 +68,11 @@ const stepLabel = "{% translate 'Step' %}";
 const nameLabel = "{% translate 'Name' %}";
 const temperatureLabel = "{% translate 'Temperature (°C)' %}";
 const durationLabel = "{% translate 'Duration (minutes)' %}";
+const modeLabel = "{% translate 'Step type' %}";
+const reachLabel = "{% translate 'Reach temperature' %}";
+const holdLabel = "{% translate 'Temperature hold' %}";
+const reachHelp = "{% translate 'Wait for the target, then continue immediately.' %}";
+const holdHelp = "{% translate 'Keep the temperature in range for the specified time.' %}";
 
 let stepCounter = 0;
 
@@ -83,6 +88,7 @@ function renderStep(step = null) {
 
     stepCounter++;
 
+    const mode = step?.mode || "hold_temperature";
     const html = `
         <div class="card app-card mb-3 step-item">
 
@@ -100,19 +106,28 @@ function renderStep(step = null) {
 
                 <div class="row g-3">
 
-                    <div class="col-md-4">
+                    <div class="col-md-6 col-lg-3">
                         <label class="form-label">${nameLabel}</label>
                         <input type="text" name="step_name" class="form-control" value="${step ? step.name : ''}" required>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6 col-lg-3">
                         <label class="form-label">${temperatureLabel}</label>
                         <input type="number" step="0.1" name="step_temperature" class="form-control" value="${step ? step.target_temperature : ''}" required>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6 col-lg-3">
+                        <label class="form-label">${modeLabel}</label>
+                        <select name="step_mode" class="form-select step-mode">
+                            <option value="reach_temperature" ${mode === "reach_temperature" ? "selected" : ""}>${reachLabel}</option>
+                            <option value="hold_temperature" ${mode === "hold_temperature" ? "selected" : ""}>${holdLabel}</option>
+                        </select>
+                        <div class="form-text step-mode-help"></div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3 step-duration-field">
                         <label class="form-label">${durationLabel}</label>
-                        <input type="number" name="step_duration" class="form-control" value="${step ? step.duration_minutes : ''}" required>
+                        <input type="number" min="0" name="step_duration" class="form-control" value="${step ? step.duration_minutes : '1'}" required>
                     </div>
 
                 </div>
@@ -125,7 +140,24 @@ function renderStep(step = null) {
     document
         .getElementById("steps-container")
         .insertAdjacentHTML("beforeend", html);
+    syncStepMode(document.querySelector(".step-item:last-child"));
     updateStepNumbers();
+}
+
+function syncStepMode(item) {
+    const select = item.querySelector(".step-mode");
+    const durationField = item.querySelector(".step-duration-field");
+    const durationInput = durationField.querySelector("input");
+    const help = item.querySelector(".step-mode-help");
+    const reachesTemperature = select.value === "reach_temperature";
+    durationField.classList.toggle("d-none", reachesTemperature);
+    help.textContent = reachesTemperature ? reachHelp : holdHelp;
+    if (reachesTemperature) {
+        if (Number(durationInput.value) > 0) durationInput.dataset.holdDuration = durationInput.value;
+        durationInput.value = "0";
+    } else if (Number(durationInput.value) <= 0) {
+        durationInput.value = durationInput.dataset.holdDuration || "1";
+    }
 }
 
 // init existing steps
@@ -150,6 +182,11 @@ document.addEventListener("click", function(event) {
     if (!removeButton) return;
     removeButton.closest(".step-item").remove();
     updateStepNumbers();
+});
+
+document.addEventListener("change", function(event) {
+    if (!event.target.matches(".step-mode")) return;
+    syncStepMode(event.target.closest(".step-item"));
 });
 
     </script>

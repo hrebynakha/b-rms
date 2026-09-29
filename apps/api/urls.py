@@ -3,6 +3,7 @@ from apps.api.views import BootstrapView
 from apps.api.views import TelemetryView
 from apps.api.views import BrewSessionStartView
 from apps.api.views import BrewSessionPauseView, BrewSessionResumeView
+from apps.api.views import BrewSessionTemperatureOverrideView
 
 urlpatterns = [
     path("bootstrap/", BootstrapView.as_view(), name="bootstrap"),
@@ -21,5 +22,10 @@ urlpatterns = [
         "brew-sessions/<int:session_id>/resume/",
         BrewSessionResumeView.as_view(),
         name="api-brew-session-resume",
+    ),
+    path(
+        "brew-sessions/<int:session_id>/temperature-override/",
+        BrewSessionTemperatureOverrideView.as_view(),
+        name="api-brew-session-temperature-override",
     ),
 ]

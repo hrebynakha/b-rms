@@ -8,7 +8,7 @@ migrations:
 esp:
 	python scripts/fake_esp32_on.py
 sensor:
-	python scripts/fake_sensor.py
+	python scripts/fake_sensor.py --profile $(or $(PROFILE),scripts/sensor_profile.json) $(if $(START_STAGE),--start-stage $(START_STAGE),) $(if $(SKIP_STAGES),--skip-stages $(SKIP_STAGES),)
 web:
 	docker run --rm \
 		-p 80:80 \

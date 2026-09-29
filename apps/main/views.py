@@ -18,11 +18,14 @@ from apps.main.models.brewery import Brewery
 from apps.main.models.sensor import Sensor
 from apps.main.models.telemetry import Telemetry
 from apps.main.models.recipe import Recipe, RecipeStep
+from apps.main.models.recipe import RecipeStepMode
 from apps.main.models.session import BrewSession, BrewSessionStatus
 from apps.main.services.session_engine import (
     DEMO_TELEMETRY_MAX_AGE_SECONDS,
+    TEMPERATURE_TOLERANCE,
     demo_hardware_is_ready,
     refresh_session,
+    step_duration_seconds,
 )
 
 
@@ -36,6 +39,8 @@ def brewery_list_view(request):
         status__in=[
             BrewSessionStatus.PENDING,
             BrewSessionStatus.RUNNING,
+            BrewSessionStatus.HEATING,
+            BrewSessionStatus.WAITING,
             BrewSessionStatus.PAUSED,
         ]
     ).select_related("recipe").order_by("-created_at")
@@ -61,7 +66,12 @@ def brewery_list_view(request):
         pending_candidate = None
         for candidate in brewery.active_brew_sessions:
             progress = refresh_session(candidate)
-            if candidate.status in [BrewSessionStatus.RUNNING, BrewSessionStatus.PAUSED]:
+            if candidate.status in [
+                BrewSessionStatus.RUNNING,
+                BrewSessionStatus.HEATING,
+                BrewSessionStatus.WAITING,
+                BrewSessionStatus.PAUSED,
+            ]:
                 brewery.active_session = candidate
                 brewery.session_progress = progress
                 break
@@ -77,6 +87,8 @@ def brewery_list_view(request):
         in [
             BrewSessionStatus.PENDING,
             BrewSessionStatus.RUNNING,
+            BrewSessionStatus.HEATING,
+            BrewSessionStatus.WAITING,
             BrewSessionStatus.PAUSED,
         ]
         for brewery in breweries
@@ -161,6 +173,7 @@ def recipe_create_view(request):
             names = request.POST.getlist("step_name")
             temperatures = request.POST.getlist("step_temperature")
             durations = request.POST.getlist("step_duration")
+            modes = request.POST.getlist("step_mode")
 
             for step_index, name in enumerate(names):
 
@@ -173,6 +186,7 @@ def recipe_create_view(request):
                     name=name,
                     target_temperature=float(temperatures[step_index]),
                     duration_minutes=int(durations[step_index]),
+                    mode=modes[step_index] if step_index < len(modes) else RecipeStepMode.HOLD_TEMPERATURE,
                 )
 
             messages.success(request, _("Recipe created successfully."))
@@ -204,6 +218,7 @@ def recipe_edit_view(request, recipe_id=None):
                 "name",
                 "target_temperature",
                 "duration_minutes",
+                "mode",
                 "order",
             )
         )
@@ -225,6 +240,7 @@ def recipe_edit_view(request, recipe_id=None):
             names = request.POST.getlist("step_name")
             temps = request.POST.getlist("step_temperature")
             durations = request.POST.getlist("step_duration")
+            modes = request.POST.getlist("step_mode")
 
             for i, name in enumerate(names):
 
@@ -237,6 +253,7 @@ def recipe_edit_view(request, recipe_id=None):
                     name=name,
                     target_temperature=float(temps[i]),
                     duration_minutes=int(durations[i]),
+                    mode=modes[i] if i < len(modes) else RecipeStepMode.HOLD_TEMPERATURE,
                 )
 
             return redirect("recipe-list")
@@ -268,7 +285,11 @@ def brew_session_list_view(request):
         .order_by("-created_at")
     )
     for session in sessions:
-        if session.status == BrewSessionStatus.RUNNING:
+        if session.status in [
+            BrewSessionStatus.RUNNING,
+            BrewSessionStatus.HEATING,
+            BrewSessionStatus.WAITING,
+        ]:
             refresh_session(session)
 
     return render(
@@ -322,13 +343,13 @@ def brew_session_detail_view(
 
     session_progress = refresh_session(session)
 
-    steps = session.recipe.steps.all()
+    steps = list(session.recipe.steps.all())
 
     current_step = None
 
     if (
         session.status != BrewSessionStatus.COMPLETED
-        and session.current_step_index < steps.count()
+        and session.current_step_index < len(steps)
     ):
         current_step = steps[session.current_step_index]
 
@@ -336,7 +357,7 @@ def brew_session_detail_view(
     latest_temperature = None
     latest_temperature_at = None
     temperature_is_live = False
-    temperature_below_target = False
+    temperature_out_of_range = False
     mash_sensor = Sensor.objects.filter(
         controller__brewery=session.brewery,
         key="mash_temperature_sensor",
@@ -352,10 +373,45 @@ def brew_session_detail_view(
         )
     if (
         current_step
-        and session.status in [BrewSessionStatus.RUNNING, BrewSessionStatus.PAUSED]
+        and session.status
+        in [
+            BrewSessionStatus.RUNNING,
+            BrewSessionStatus.HEATING,
+            BrewSessionStatus.WAITING,
+            BrewSessionStatus.PAUSED,
+        ]
         and latest_temperature is not None
+        and current_step.mode == RecipeStepMode.HOLD_TEMPERATURE
     ):
-        temperature_below_target = latest_temperature < current_step.target_temperature
+        temperature_out_of_range = abs(
+            latest_temperature - current_step.target_temperature
+        ) > TEMPERATURE_TOLERANCE
+
+    step_progresses = []
+    for index, step in enumerate(steps):
+        duration = step_duration_seconds(session, steps, index)
+        is_completed = index < session.current_step_index
+        is_current = (
+            index == session.current_step_index
+            and session.status != BrewSessionStatus.COMPLETED
+        )
+        elapsed = duration if is_completed else 0
+        if is_current:
+            elapsed = session_progress.step_elapsed_seconds
+        step_progresses.append(
+            {
+                "step": step,
+                "is_completed": is_completed,
+                "is_current": is_current,
+                "duration_seconds": duration,
+                "elapsed_seconds": elapsed,
+                "elapsed_minutes": elapsed // 60,
+                "elapsed_remainder": elapsed % 60,
+                "duration_minutes": duration // 60,
+                "duration_remainder": duration % 60,
+                "percent": min(100, int(elapsed * 100 / duration)) if duration else 0,
+            }
+        )
 
     return render(
         request,
@@ -363,6 +419,7 @@ def brew_session_detail_view(
         {
             "session": session,
             "steps": steps,
+            "step_progresses": step_progresses,
             "current_step": current_step,
             "session_progress": session_progress,
             "demo_ready": demo_hardware_is_ready(session.brewery),
@@ -370,7 +427,7 @@ def brew_session_detail_view(
             "latest_temperature": latest_temperature,
             "latest_temperature_at": latest_temperature_at,
             "temperature_is_live": temperature_is_live,
-            "temperature_below_target": temperature_below_target,
+            "temperature_out_of_range": temperature_out_of_range,
         },
     )
 
@@ -484,15 +541,26 @@ def _session_temperature_chart(session):
     colors = ["#ff6384", "#36a2eb", "#4bc0c0", "#ffcd56"]
     datasets = []
     for index, sensor in enumerate(sensors):
-        points = sensor.telemetry.filter(
-            created_at__gte=session.started_at,
-            created_at__lte=end,
-        ).order_by("created_at")[:300]
+        points = list(
+            sensor.telemetry.filter(
+                created_at__gte=session.started_at,
+                created_at__lte=end,
+            ).order_by("created_at")[:1000]
+        )
         if not points:
             continue
+        latest = points[-1]
         datasets.append(
             {
                 "label": sensor.name,
+                "unit": sensor.unit,
+                "latestValue": latest.value,
+                "latestAt": localtime(latest.created_at).strftime("%H:%M:%S"),
+                "isLive": (
+                    session.completed_at is None
+                    and (timezone.now() - latest.created_at).total_seconds()
+                    <= DEMO_TELEMETRY_MAX_AGE_SECONDS
+                ),
                 "borderColor": colors[index % len(colors)],
                 "backgroundColor": colors[index % len(colors)],
                 "pointBackgroundColor": colors[index % len(colors)],

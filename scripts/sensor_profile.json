@@ -1,0 +1,74 @@
+{
+  "interval_seconds": 3,
+  "temperature_noise": 0.15,
+  "voltage": 3.3,
+  "cooling_temperature": 24.0,
+  "stages": [
+    {
+      "name": "Нагрівання до 62°C",
+      "duration_seconds": 40,
+      "start_temperature": 48,
+      "end_temperature": 62
+    },
+    {
+      "name": "Нагрівання до 69°C",
+      "duration_seconds": 30,
+      "start_temperature": 62,
+      "end_temperature": 69
+    },
+    {
+      "name": "Пауза: вкидання зерна",
+      "duration_seconds": 60,
+      "start_temperature": 69,
+      "end_temperature": 69
+    },
+    {
+      "name": "Нагрівання до 72°C",
+      "duration_seconds": 30,
+      "start_temperature": 69,
+      "end_temperature": 72
+    },
+    {
+      "name": "Пауза: варіння",
+      "duration_seconds": 60,
+      "start_temperature": 72,
+      "end_temperature": 72
+    },
+    {
+      "name": "Охолодження до 70°C",
+      "duration_seconds": 20,
+      "start_temperature": 72,
+      "end_temperature": 70
+    },
+    {
+      "name": "Пауза: затирання",
+      "duration_seconds": 60,
+      "start_temperature": 70,
+      "end_temperature": 70
+    },
+    {
+      "name": "Нагрівання до 74°C",
+      "duration_seconds": 30,
+      "start_temperature": 70,
+      "end_temperature": 74
+    },
+    {
+      "name": "Пауза: варіння 2",
+      "duration_seconds": 60,
+      "start_temperature": 74,
+      "end_temperature": 74
+    },
+    {
+      "name": "Охолодження до 68°C",
+      "duration_seconds": 30,
+      "start_temperature": 74,
+      "end_temperature": 68
+    },
+    {
+      "name": "Пауза: меш аут",
+      "duration_seconds": 60,
+      "start_temperature": 68,
+      "end_temperature": 68
+    }
+  ]
+}

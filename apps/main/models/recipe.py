@@ -1,4 +1,10 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+
+class RecipeStepMode(models.TextChoices):
+    REACH_TEMPERATURE = "reach_temperature", _("Reach temperature")
+    HOLD_TEMPERATURE = "hold_temperature", _("Temperature hold")
 
 
 class Recipe(models.Model):
@@ -24,6 +30,12 @@ class RecipeStep(models.Model):
     name = models.CharField(max_length=255)
 
     target_temperature = models.FloatField()
+
+    mode = models.CharField(
+        max_length=32,
+        choices=RecipeStepMode.choices,
+        default=RecipeStepMode.HOLD_TEMPERATURE,
+    )
 
     duration_minutes = models.PositiveIntegerField()
 
