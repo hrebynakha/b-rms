@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Prefetch, Q
+from django.utils.translation import gettext as _
 
 from apps.main.forms import (
     BrewSessionForm,
@@ -11,7 +12,8 @@ from apps.main.forms import (
 from apps.main.models.brewery import Brewery
 from apps.main.models.sensor import Sensor
 from apps.main.models.recipe import Recipe, RecipeStep
-from apps.main.models.session import BrewSession
+from apps.main.models.session import BrewSession, BrewSessionStatus
+from apps.main.services.session_engine import refresh_session
 
 
 def index(request):
@@ -20,15 +22,39 @@ def index(request):
 
 def brewery_list_view(request):
 
+    active_sessions = BrewSession.objects.filter(
+        status__in=[BrewSessionStatus.PENDING, BrewSessionStatus.RUNNING]
+    ).select_related("recipe").order_by("-created_at")
+
     breweries = (
         Brewery.objects.prefetch_related(
             "controllers",
             "controllers__sensors",
             "controllers__sensors__telemetry",
+            Prefetch(
+                "brew_sessions",
+                queryset=active_sessions,
+                to_attr="active_brew_sessions",
+            ),
         )
         .all()
         .order_by("-created_at")
     )
+
+    for brewery in breweries:
+        brewery.active_session = None
+        brewery.session_progress = None
+        pending_candidate = None
+        for candidate in brewery.active_brew_sessions:
+            progress = refresh_session(candidate)
+            if candidate.status == BrewSessionStatus.RUNNING:
+                brewery.active_session = candidate
+                brewery.session_progress = progress
+                break
+            if candidate.status == BrewSessionStatus.PENDING and pending_candidate is None:
+                pending_candidate = (candidate, progress)
+        if brewery.active_session is None and pending_candidate:
+            brewery.active_session, brewery.session_progress = pending_candidate
 
     return render(
         request,
@@ -108,7 +134,7 @@ def recipe_create_view(request):
                     duration_minutes=int(durations[step_index]),
                 )
 
-            messages.success(request, "Recipe created successfully.")
+            messages.success(request, _("Recipe created successfully."))
 
             return redirect("recipe-list")
 
@@ -246,11 +272,16 @@ def brew_session_detail_view(
         pk=session_id,
     )
 
+    session_progress = refresh_session(session)
+
     steps = session.recipe.steps.all()
 
     current_step = None
 
-    if session.current_step_index < steps.count():
+    if (
+        session.status != BrewSessionStatus.COMPLETED
+        and session.current_step_index < steps.count()
+    ):
         current_step = steps[session.current_step_index]
 
     return render(
@@ -260,6 +291,7 @@ def brew_session_detail_view(
             "session": session,
             "steps": steps,
             "current_step": current_step,
+            "session_progress": session_progress,
         },
     )
 

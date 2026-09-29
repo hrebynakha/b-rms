@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-{% load static %}
-<html lang="en" data-bs-theme="dark">
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}" data-bs-theme="dark">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="B-RMS - Brewery Remote Management System">
-        <meta name="keywords" content="brewery, remote, management, system">
+        <meta name="description" content="{% translate 'B-RMS - Brewery Remote Management System' %}">
+        <meta name="keywords" content="{% translate 'brewery, remote, management, system' %}">
         {% block meta %}
         {% endblock meta %}
         <script defer
@@ -30,12 +31,22 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item active">
-                        <a class="navbar-brand" href="{% url 'recipe-list' %}">Recipes</a>
+                        <a class="navbar-brand" href="{% url 'recipe-list' %}">{% translate "Recipes" %}</a>
                     </li>
                     <li class="nav-item active">
-                        <a class="navbar-brand" href="{% url 'brew-session-list' %}">Brew Sessions</a>
+                        <a class="navbar-brand" href="{% url 'brew-session-list' %}">{% translate "Brew Sessions" %}</a>
                     </li>
                 </ul>
+                <form action="{% url 'set_language' %}" method="post" class="ms-auto me-2">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                    <select name="language" class="form-select form-select-sm" aria-label="{% translate 'Language' %}" onchange="this.form.submit()">
+                        {% get_available_languages as LANGUAGES %}
+                        {% for language_code, language_name in LANGUAGES %}
+                            <option value="{{ language_code }}"{% if language_code == LANGUAGE_CODE %} selected{% endif %}>{{ language_name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
         </nav>
         <main class="container main-content">

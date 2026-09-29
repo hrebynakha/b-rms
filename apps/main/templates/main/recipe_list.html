@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% load static %}
+{% load i18n static %}
 {% block title %}
-    Recipes
+    {% translate "Recipes" %}
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0">Recipes</h1>
+            <h1 class="mb-0">{% translate "Recipes" %}</h1>
             <a href="{% url 'recipe-create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-lg"></i>
-                Create Recipe
+                {% translate "Create Recipe" %}
             </a>
         </div>
         <form method="get" class="mb-4">
@@ -20,10 +20,10 @@
                 <input type="text"
                        name="search"
                        class="form-control"
-                       placeholder="Search recipes..."
+                       placeholder="{% translate 'Search recipes...' %}"
                        value="{{ search }}">
                 {% if search %}
-                    <a href="{% url 'recipe-list' %}" class="btn btn-outline-secondary">Clear</a>
+                    <a href="{% url 'recipe-list' %}" class="btn btn-outline-secondary">{% translate "Clear" %}</a>
                 {% endif %}
             </div>
         </form>
@@ -35,16 +35,16 @@
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <h4 class="card-title mb-0">{{ recipe.name }}</h4>
-                                    <span class="badge bg-dark">{{ recipe.steps.count }} steps</span>
+                                    <span class="badge bg-dark">{% blocktranslate count step_count=recipe.steps.count %}{{ step_count }} step{% plural %}{{ step_count }} steps{% endblocktranslate %}</span>
                                 </div>
-                                <p class="text-light-emphasis flex-grow-1">{{ recipe.description|default:"No description" }}</p>
+                                <p class="text-light-emphasis flex-grow-1">{{ recipe.description|default:_('No description') }}</p>
                                 <div class="small text-muted mb-3">
-                                    Created:
+                                    {% translate "Created:" %}
                                     {{ recipe.created_at|date:"d M Y" }}
                                 </div>
                                 <div class="d-flex gap-2">
                                     <a href="{% url 'recipe-edit' recipe.id %}"
-                                       class="btn btn-outline-light btn-sm">Edit</a>
+                                       class="btn btn-outline-light btn-sm">{% translate "Edit" %}</a>
                                     <button type="button"
                                             class="btn btn-danger btn-sm"
                                             data-bs-toggle="modal"
@@ -62,7 +62,7 @@
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content bg-dark">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">Delete recipe</h5>
+                                    <h5 class="modal-title">{% translate "Delete recipe" %}</h5>
                                     <button type="button"
                                             class="btn-close btn-close-white"
                                             data-bs-dismiss="modal"></button>
@@ -71,13 +71,12 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
                                     <div class="modal-body">
-                                        Are you sure you want to delete
-                                        <strong>{{ recipe.name }}</strong>?
-                                        <div class="text-danger mt-3">This action cannot be undone.</div>
+                                        {% blocktranslate with recipe_name=recipe.name %}Are you sure you want to delete <strong>{{ recipe_name }}</strong>?{% endblocktranslate %}
+                                        <div class="text-danger mt-3">{% translate "This action cannot be undone." %}</div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                                        <button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>
                                     </div>
                                 </form>
                             </div>
@@ -88,9 +87,9 @@
         {% else %}
             <div class="card bg-secondary border-0">
                 <div class="card-body text-center py-5">
-                    <h4>No recipes found</h4>
-                    <p class="text-muted">Create your first brewing recipe.</p>
-                    <a href="{% url 'recipe-create' %}" class="btn btn-primary">Create Recipe</a>
+                    <h4>{% translate "No recipes found" %}</h4>
+                    <p class="text-muted">{% translate "Create your first brewing recipe." %}</p>
+                    <a href="{% url 'recipe-create' %}" class="btn btn-primary">{% translate "Create Recipe" %}</a>
                 </div>
             </div>
         {% endif %}

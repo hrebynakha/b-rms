@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <title>B-RMS Setup</title>
+    <title>Налаштування B-RMS</title>
 
     <style>
       :root {
@@ -128,22 +128,22 @@
       <div class="card">
         <div class="logo">
           <h1>🍺 B-RMS</h1>
-          <p>Brewery Remote Management System</p>
+          <p>Система віддаленого керування броварнею</p>
         </div>
 
         <form action="/save" method="POST">
           <div class="form-group">
-            <label>WiFi SSID</label>
-            <input type="text" name="ssid" placeholder="Home WiFi" />
+            <label>Назва мережі Wi-Fi (SSID)</label>
+            <input type="text" name="ssid" placeholder="Домашня мережа Wi-Fi" />
           </div>
 
           <div class="form-group">
-            <label>WiFi Password</label>
+            <label>Пароль Wi-Fi</label>
             <input type="password" name="password" placeholder="********" />
           </div>
 
           <div class="form-group">
-            <label>B-RMS Server URL</label>
+            <label>URL сервера B-RMS</label>
             <input
               type="text"
               name="server"
@@ -151,12 +151,12 @@
             />
           </div>
 
-          <button type="submit">Save & Connect</button>
+          <button type="submit">Зберегти й підключитися</button>
         </form>
 
-        <div class="status">Configure your brewery controller</div>
+        <div class="status">Налаштуйте контролер броварні</div>
 
-        <div class="version">B-RMS Controller v1.0</div>
+        <div class="version">Контролер B-RMS v1.0</div>
       </div>
     </div>
       <script>
@@ -174,7 +174,7 @@
                 })
             });
 
-            alert("Configuration saved. Device will reboot.");
+            alert("Налаштування збережено. Пристрій перезавантажиться.");
         }    
 </script>
   </body>

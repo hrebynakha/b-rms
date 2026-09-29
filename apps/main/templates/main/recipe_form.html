@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}
-    Create Recipe
+    {% if is_edit %}{% translate "Edit Recipe" %}{% else %}{% translate "Create Recipe" %}{% endif %}
 {% endblock title %}
 {% block content %}
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Create Recipe</h1>
+            <h1>{% if is_edit %}{% translate "Edit Recipe" %}{% else %}{% translate "Create Recipe" %}{% endif %}</h1>
             <a href="{% url 'recipe-list' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left"></i>
-                Back
+                {% translate "Back" %}
             </a>
         </div>
         <form method="post">
@@ -16,24 +17,24 @@
             <div class="card bg-secondary mb-4">
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label">Name</label>
+                        <label class="form-label">{% translate "Name" %}</label>
                         {{ form.name }}
                     </div>
                     <div>
-                        <label class="form-label">Description</label>
+                        <label class="form-label">{% translate "Description" %}</label>
                         {{ form.description }}
                     </div>
                 </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0">Mash Steps</h3>
+                <h3 class="mb-0">{% translate "Mash Steps" %}</h3>
                 <button type="button" id="add-step-btn" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
-                    Add Step
+                    {% translate "Add Step" %}
                 </button>
             </div>
             <div id="steps-container"></div>
-            <button type="submit" class="btn btn-success mt-4">Save Recipe</button>
+            <button type="submit" class="btn btn-success mt-4">{% translate "Save Recipe" %}</button>
         </form>
     </div>
     {{ steps|json_script:"steps-data" }}
@@ -41,6 +42,11 @@
 const stepsData = JSON.parse(
     document.getElementById("steps-data").textContent
 );
+
+const stepLabel = "{% translate 'Step' %}";
+const nameLabel = "{% translate 'Name' %}";
+const temperatureLabel = "{% translate 'Temperature (°C)' %}";
+const durationLabel = "{% translate 'Duration (minutes)' %}";
 
 let stepCounter = 0;
 
@@ -55,7 +61,7 @@ function renderStep(step = null) {
 
                 <div class="d-flex justify-content-between mb-3">
 
-                    <h5>Step ${stepCounter}</h5>
+                    <h5>${stepLabel} ${stepCounter}</h5>
 
                     <button type="button" class="btn btn-sm btn-danger remove-step">
                         <i class="bi bi-trash"></i>
@@ -66,17 +72,17 @@ function renderStep(step = null) {
                 <div class="row">
 
                     <div class="col-md-4">
-                        <label class="form-label">Name</label>
+                        <label class="form-label">${nameLabel}</label>
                         <input type="text" name="step_name" class="form-control" value="${step ? step.name : ''}" required>
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">Temperature (°C)</label>
+                        <label class="form-label">${temperatureLabel}</label>
                         <input type="number" step="0.1" name="step_temperature" class="form-control" value="${step ? step.target_temperature : ''}" required>
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">Duration (minutes)</label>
+                        <label class="form-label">${durationLabel}</label>
                         <input type="number" name="step_duration" class="form-control" value="${step ? step.duration_minutes : ''}" required>
                     </div>
 

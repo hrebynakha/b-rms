@@ -1,11 +1,12 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class BrewSessionStatus(models.TextChoices):
-    PENDING = "pending", "Pending"
-    RUNNING = "running", "Running"
-    COMPLETED = "completed", "Completed"
-    FAILED = "failed", "Failed"
+    PENDING = "pending", _("Pending")
+    RUNNING = "running", _("Running")
+    COMPLETED = "completed", _("Completed")
+    FAILED = "failed", _("Failed")
 
 
 class BrewSession(models.Model):

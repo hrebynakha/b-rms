@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block meta %}
     <meta http-equiv="refresh" content="3">
 {% endblock meta %}
@@ -30,7 +31,7 @@
       data: {
           labels: labels,
           datasets: [{
-              label: '{{ sensor.kind }}',
+              label: '{{ sensor.get_kind_display }}',
               data: values,
               borderWidth: 2,
               tension: 0.3

@@ -6,17 +6,20 @@ BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
 
 payload = {
     "mac_address": "ESP32-002",
+    "name": "Brewery 1",
     "firmware_version": "0.1.1",
     "sensors": [
         {
             "key": "mash_temperature_sensor",
             "kind": "temperature",
             "unit": "°C",
+            "name": "Temperature sensor"
         },
         {
             "key": "input_voltage_sensor",
             "kind": "voltage",
             "unit": "V",
+            "name": "Voltage sensor"
         }
     ]
 }

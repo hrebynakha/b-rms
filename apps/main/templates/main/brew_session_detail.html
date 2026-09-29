@@ -1,7 +1,11 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}
-    Brew Session
+    {% translate "Brew Session" %}
 {% endblock title %}
+{% block meta %}
+    {% if session.status == "running" %}<meta http-equiv="refresh" content="5" />{% endif %}
+{% endblock meta %}
 {% block content %}
     <h1 class="mb-4">{{ session.recipe.name }}</h1>
     <h4 class="mb-4 text-muted">{{ session.recipe.description }}</h4>
@@ -9,19 +13,35 @@
         <div class="col-md-4">
             <div class="card bg-secondary mb-3">
                 <div class="card-body">
-                    <h5>Status</h5>
-                    <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.status }}</span>
+                    <h5>{% translate "Status" %}</h5>
+                    <span class="badge bg-dark d-inline-flex align-items-center p-2">{{ session.get_status_display }}</span>
+                    {% if session.status == "pending" %}
+                        <button type="button"
+                                class="btn btn-primary d-block mt-3 js-start-session"
+                                data-start-url="{% url 'api-brew-session-start' session.id %}"
+                                data-error-message="{% translate 'Could not start session.' %}">
+                            {% translate "Start 3-minute demo" %}
+                        </button>
+                        <div class="alert alert-danger mt-3 mb-0 d-none js-start-error" role="alert"></div>
+                    {% endif %}
                 </div>
             </div>
             <div class="card bg-secondary">
                 <div class="card-body">
-                    <h5>Current Step</h5>
-                    {% if current_step %}
+                    <h5>{% translate "Current Step" %}</h5>
+                    {% if session.status == "running" %}
+                        <div>{% translate session_progress.step_name %}</div>
+                        <div>{% blocktranslate with seconds=session_progress.remaining_seconds %}{{ seconds }}s left in demo{% endblocktranslate %}</div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 style="width: {{ session_progress.percent }}%"></div>
+                        </div>
+                    {% elif current_step %}
                         <div>{{ current_step.name }}</div>
                         <div>{{ current_step.target_temperature }}°C</div>
-                        <div>{{ current_step.duration_minutes }} min</div>
+                        <div>{% blocktranslate with minutes=current_step.duration_minutes %}{{ minutes }} min{% endblocktranslate %}</div>
                     {% else %}
-                        Completed
+                        {% translate "Completed" %}
                     {% endif %}
                 </div>
             </div>
@@ -29,7 +49,7 @@
         <div class="col-md-8">
             <div class="card bg-secondary">
                 <div class="card-body">
-                    <h5 class="mb-3">Recipe Steps</h5>
+                    <h5 class="mb-3">{% translate "Recipe Steps" %}</h5>
                     {% for step in steps %}
                         <div class="border-bottom py-2">
                             <strong>
@@ -39,7 +59,7 @@
                             <div>
                                 {{ step.target_temperature }}°C
                                 /
-                                {{ step.duration_minutes }} min
+                                {% blocktranslate with minutes=step.duration_minutes %}{{ minutes }} min{% endblocktranslate %}
                             </div>
                         </div>
                     {% endfor %}
@@ -47,4 +67,26 @@
             </div>
         </div>
     </div>
+    <script>
+        const startButton = document.querySelector(".js-start-session");
+        if (startButton) {
+            startButton.addEventListener("click", async () => {
+                startButton.disabled = true;
+                const errorBox = document.querySelector(".js-start-error");
+                try {
+                    const response = await fetch(startButton.dataset.startUrl, {
+                        method: "POST",
+                        headers: {"X-CSRFToken": "{{ csrf_token }}"}
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || startButton.dataset.errorMessage);
+                    window.location.reload();
+                } catch (error) {
+                    errorBox.textContent = error.message;
+                    errorBox.classList.remove("d-none");
+                    startButton.disabled = false;
+                }
+            });
+        }
+    </script>
 {% endblock content %}

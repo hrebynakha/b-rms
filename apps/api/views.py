@@ -1,7 +1,9 @@
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import gettext as _
 
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.views import APIView
 
 from apps.main.models import Brewery
@@ -12,6 +14,8 @@ from apps.main.models import Telemetry
 
 from apps.api.serializers import TelemetrySerializer
 from apps.api.serializers import BootstrapSerializer
+from apps.main.models.session import BrewSession
+from apps.main.services.session_engine import SessionStartError, start_session
 
 
 class BootstrapView(APIView):
@@ -119,4 +123,34 @@ class TelemetryView(APIView):
             {
                 "success": True,
             }
+        )
+
+
+class BrewSessionStartView(APIView):
+
+    def post(self, request, session_id):
+        try:
+            session, progress = start_session(session_id)
+        except BrewSession.DoesNotExist:
+            return Response(
+                {"detail": _("Brew session not found.")},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except SessionStartError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(
+            {
+                "id": session.id,
+                "status": session.status,
+                "started_at": session.started_at,
+                "current_step_index": progress.step_index,
+                "current_step": progress.step_name,
+                "remaining_seconds": progress.remaining_seconds,
+                "progress_percent": progress.percent,
+            },
+            status=status.HTTP_200_OK,
         )

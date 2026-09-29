@@ -1,0 +1,354 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: B-RMS\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 20:28+0300\n"
+"PO-Revision-Date: 2026-09-29 20:28+0300\n"
+"Language-Team: Ukrainian\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != "
+"11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
+"100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
+"(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+
+#: apps/api/views.py:136
+msgid "Brew session not found."
+msgstr "Сесію варіння не знайдено."
+
+#: apps/main/forms.py:20
+msgid "Recipe name"
+msgstr "Назва рецепта"
+
+#: apps/main/forms.py:27 apps/main/templates/main/recipe_form.html:24
+msgid "Description"
+msgstr "Опис"
+
+#: apps/main/forms.py:43
+msgid "Brewery"
+msgstr "Броварня"
+
+#: apps/main/forms.py:44
+msgid "Recipe"
+msgstr "Рецепт"
+
+#: apps/main/models/sensor.py:5
+msgid "Temperature"
+msgstr "Температура"
+
+#: apps/main/models/sensor.py:6
+msgid "Voltage"
+msgstr "Напруга"
+
+#: apps/main/models/sensor.py:7
+msgid "Water level"
+msgstr "Рівень води"
+
+#: apps/main/models/sensor.py:8
+msgid "Ambient temperature"
+msgstr "Температура довкілля"
+
+#: apps/main/models/session.py:6
+msgid "Pending"
+msgstr "Очікує"
+
+#: apps/main/models/session.py:7
+msgid "Running"
+msgstr "Виконується"
+
+#: apps/main/models/session.py:8
+#: apps/main/templates/main/brew_session_detail.html:44
+msgid "Completed"
+msgstr "Завершено"
+
+#: apps/main/models/session.py:9
+msgid "Failed"
+msgstr "Помилка"
+
+#: apps/main/services/session_engine.py:15
+msgid "Mash in"
+msgstr "Затирання"
+
+#: apps/main/services/session_engine.py:16
+msgid "Mash rest"
+msgstr "Пауза затирання"
+
+#: apps/main/services/session_engine.py:17
+msgid "Mash out"
+msgstr "Мешаут"
+
+#: apps/main/services/session_engine.py:68
+msgid "Only a pending brew session can be started."
+msgstr "Запустити можна лише сесію, що очікує."
+
+#: apps/main/services/session_engine.py:79
+msgid "This brewery already has a running brew session."
+msgstr "У цій броварні вже виконується сесія варіння."
+
+#: apps/main/templates/main/brew_session_detail.html:4
+msgid "Brew Session"
+msgstr "Сесія варіння"
+
+#: apps/main/templates/main/brew_session_detail.html:16
+msgid "Status"
+msgstr "Статус"
+
+#: apps/main/templates/main/brew_session_detail.html:22
+#: apps/main/templates/main/brewery_list.html:48
+msgid "Could not start session."
+msgstr "Не вдалося запустити сесію."
+
+#: apps/main/templates/main/brew_session_detail.html:23
+#: apps/main/templates/main/brewery_list.html:49
+msgid "Start 3-minute demo"
+msgstr "Запустити 3-хвилинне демо"
+
+#: apps/main/templates/main/brew_session_detail.html:31
+msgid "Current Step"
+msgstr "Поточний етап"
+
+#: apps/main/templates/main/brew_session_detail.html:34
+#, python-format
+msgid "%(seconds)ss left in demo"
+msgstr "У демо залишилося %(seconds)s с"
+
+#: apps/main/templates/main/brew_session_detail.html:42
+#: apps/main/templates/main/brew_session_detail.html:62
+#, python-format
+msgid "%(minutes)s min"
+msgstr "%(minutes)s хв"
+
+#: apps/main/templates/main/brew_session_detail.html:52
+msgid "Recipe Steps"
+msgstr "Етапи рецепта"
+
+#: apps/main/templates/main/brew_session_form.html:4
+#: apps/main/templates/main/brew_session_form.html:7
+msgid "New Brew Session"
+msgstr "Нова сесія варіння"
+
+#: apps/main/templates/main/brew_session_form.html:13
+msgid "Create Session"
+msgstr "Створити сесію"
+
+#: apps/main/templates/main/brew_session_list.html:4
+#: apps/main/templates/main/brew_session_list.html:8 templates/base.html:37
+msgid "Brew Sessions"
+msgstr "Сесії варіння"
+
+#: apps/main/templates/main/brew_session_list.html:11
+msgid "New Session"
+msgstr "Нова сесія"
+
+#: apps/main/templates/main/brew_session_list.html:24
+msgid "Brewery:"
+msgstr "Броварня:"
+
+#: apps/main/templates/main/brew_session_list.html:28
+msgid "Step:"
+msgstr "Етап:"
+
+#: apps/main/templates/main/brew_session_list.html:33
+msgid "Open"
+msgstr "Відкрити"
+
+#: apps/main/templates/main/brew_session_list.html:38
+msgid "No brew sessions"
+msgstr "Сесій варіння немає"
+
+#: apps/main/templates/main/brewery_list.html:10
+#: apps/main/templates/main/brewery_list.html:13
+msgid "Breweries"
+msgstr "Броварні"
+
+#: apps/main/templates/main/brewery_list.html:35
+msgid "Active brew session"
+msgstr "Активна сесія варіння"
+
+#: apps/main/templates/main/brewery_list.html:42
+msgid "Details"
+msgstr "Докладніше"
+
+#: apps/main/templates/main/brewery_list.html:55
+#, python-format
+msgid "%(seconds)ss left"
+msgstr "Залишилося %(seconds)s с"
+
+#: apps/main/templates/main/brewery_list.html:57
+msgid "Demo mash progress"
+msgstr "Перебіг демонстраційного затирання"
+
+#: apps/main/templates/main/brewery_list.html:68
+msgid "Controllers"
+msgstr "Контролери"
+
+#: apps/main/templates/main/brewery_list.html:79
+msgid "ONLINE"
+msgstr "У МЕРЕЖІ"
+
+#: apps/main/templates/main/brewery_list.html:81
+msgid "OFFLINE"
+msgstr "НЕ В МЕРЕЖІ"
+
+#: apps/main/templates/main/brewery_list.html:93
+msgid "View history"
+msgstr "Переглянути історію"
+
+#: apps/main/templates/main/brewery_list.html:100
+msgid "No telemetry"
+msgstr "Телеметрії немає"
+
+#: apps/main/templates/main/brewery_list.html:116
+msgid "Delete brewery"
+msgstr "Видалити броварню"
+
+#: apps/main/templates/main/brewery_list.html:120
+msgid "Close"
+msgstr "Закрити"
+
+#: apps/main/templates/main/brewery_list.html:126
+#, python-format
+msgid "Are you sure you want to delete <strong>%(brewery_name)s</strong>?"
+msgstr "Ви впевнені, що хочете видалити <strong>%(brewery_name)s</strong>?"
+
+#: apps/main/templates/main/brewery_list.html:127
+#: apps/main/templates/main/recipe_list.html:75
+msgid "This action cannot be undone."
+msgstr "Цю дію неможливо скасувати."
+
+#: apps/main/templates/main/brewery_list.html:130
+#: apps/main/templates/main/recipe_list.html:78
+msgid "Cancel"
+msgstr "Скасувати"
+
+#: apps/main/templates/main/brewery_list.html:131
+#: apps/main/templates/main/recipe_list.html:79
+msgid "Delete"
+msgstr "Видалити"
+
+#: apps/main/templates/main/brewery_list.html:138
+msgid "No controllers"
+msgstr "Контролерів немає"
+
+#: apps/main/templates/main/brewery_list.html:143
+msgid "No breweries registered"
+msgstr "Немає зареєстрованих броварень"
+
+#: apps/main/templates/main/recipe_form.html:4
+#: apps/main/templates/main/recipe_form.html:9
+msgid "Edit Recipe"
+msgstr "Редагувати рецепт"
+
+#: apps/main/templates/main/recipe_form.html:4
+#: apps/main/templates/main/recipe_form.html:9
+#: apps/main/templates/main/recipe_list.html:12
+#: apps/main/templates/main/recipe_list.html:92
+msgid "Create Recipe"
+msgstr "Створити рецепт"
+
+#: apps/main/templates/main/recipe_form.html:12
+msgid "Back"
+msgstr "Назад"
+
+#: apps/main/templates/main/recipe_form.html:20
+#: apps/main/templates/main/recipe_form.html:47
+msgid "Name"
+msgstr "Назва"
+
+#: apps/main/templates/main/recipe_form.html:30
+msgid "Mash Steps"
+msgstr "Етапи затирання"
+
+#: apps/main/templates/main/recipe_form.html:33
+msgid "Add Step"
+msgstr "Додати етап"
+
+#: apps/main/templates/main/recipe_form.html:37
+msgid "Save Recipe"
+msgstr "Зберегти рецепт"
+
+#: apps/main/templates/main/recipe_form.html:46
+msgid "Step"
+msgstr "Етап"
+
+#: apps/main/templates/main/recipe_form.html:48
+msgid "Temperature (°C)"
+msgstr "Температура (°C)"
+
+#: apps/main/templates/main/recipe_form.html:49
+msgid "Duration (minutes)"
+msgstr "Тривалість (хвилини)"
+
+#: apps/main/templates/main/recipe_list.html:4
+#: apps/main/templates/main/recipe_list.html:9 templates/base.html:34
+msgid "Recipes"
+msgstr "Рецепти"
+
+#: apps/main/templates/main/recipe_list.html:23
+msgid "Search recipes..."
+msgstr "Пошук рецептів..."
+
+#: apps/main/templates/main/recipe_list.html:26
+msgid "Clear"
+msgstr "Очистити"
+
+#: apps/main/templates/main/recipe_list.html:38
+#, python-format
+msgid "%(step_count)s step"
+msgid_plural "%(step_count)s steps"
+msgstr[0] "%(step_count)s етап"
+msgstr[1] "%(step_count)s етапи"
+msgstr[2] "%(step_count)s етапів"
+msgstr[3] "%(step_count)s етапу"
+
+#: apps/main/templates/main/recipe_list.html:40
+msgid "No description"
+msgstr "Без опису"
+
+#: apps/main/templates/main/recipe_list.html:42
+msgid "Created:"
+msgstr "Створено:"
+
+#: apps/main/templates/main/recipe_list.html:47
+msgid "Edit"
+msgstr "Редагувати"
+
+#: apps/main/templates/main/recipe_list.html:65
+msgid "Delete recipe"
+msgstr "Видалити рецепт"
+
+#: apps/main/templates/main/recipe_list.html:74
+#, python-format
+msgid "Are you sure you want to delete <strong>%(recipe_name)s</strong>?"
+msgstr "Ви впевнені, що хочете видалити <strong>%(recipe_name)s</strong>?"
+
+#: apps/main/templates/main/recipe_list.html:90
+msgid "No recipes found"
+msgstr "Рецептів не знайдено"
+
+#: apps/main/templates/main/recipe_list.html:91
+msgid "Create your first brewing recipe."
+msgstr "Створіть свій перший рецепт варіння."
+
+#: apps/main/views.py:137
+msgid "Recipe created successfully."
+msgstr "Рецепт успішно створено."
+
+#: templates/base.html:8
+msgid "B-RMS - Brewery Remote Management System"
+msgstr "B-RMS — система віддаленого керування броварнею"
+
+#: templates/base.html:9
+msgid "brewery, remote, management, system"
+msgstr "броварня, віддалене керування, система"
+
+#: templates/base.html:43
+msgid "Language"
+msgstr "Мова"

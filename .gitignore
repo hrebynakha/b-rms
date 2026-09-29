@@ -11,3 +11,4 @@ db.sqlite3
 .vscode/launch.json
 .vscode/ipch
 secrets.h
+*.mo

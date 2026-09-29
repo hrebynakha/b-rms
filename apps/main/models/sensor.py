@@ -1,10 +1,11 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 class SensorKind(models.TextChoices):
-    TEMPERATURE = "temperature", "Temperature"
-    VOLTAGE = "voltage", "Voltage"
-    WATER_LEVEL = "water_level", "Water level"
-    AMBIENT_TEMPERATURE = "ambient_temperature", "Ambient temperature"
+    TEMPERATURE = "temperature", _("Temperature")
+    VOLTAGE = "voltage", _("Voltage")
+    WATER_LEVEL = "water_level", _("Water level")
+    AMBIENT_TEMPERATURE = "ambient_temperature", _("Ambient temperature")
 
 class Sensor(models.Model):
 
