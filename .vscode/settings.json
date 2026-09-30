@@ -13,5 +13,6 @@
     "editor.defaultFormatter": "monosans.djlint",
     "editor.formatOnSave": true
   },
-  "cSpell.words": ["endfor", "endwith"]
+  "cSpell.words": ["endfor", "endwith"],
+  "chat.disableAIFeatures": true
 }

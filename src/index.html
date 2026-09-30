@@ -3,212 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-
     <title>Налаштування B-RMS</title>
-
     <style>
-      :root {
-        --bg: #0f172a;
-        --card: #1e293b;
-        --primary: #3b82f6;
-        --primary-hover: #2563eb;
-        --text: #f8fafc;
-        --muted: #94a3b8;
-        --border: #334155;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family:
-          Inter,
-          Segoe UI,
-          sans-serif;
-      }
-
-      body {
-        background: linear-gradient(135deg, #0f172a, #1e293b);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-
-      .container {
-        width: 100%;
-        max-width: 500px;
-      }
-
-      .card {
-        background: rgba(30, 41, 59, 0.95);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
-        padding: 32px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      }
-
-      .logo {
-        text-align: center;
-        margin-bottom: 28px;
-      }
-
-      .logo h1 {
-        color: white;
-        font-size: 2rem;
-        margin-bottom: 6px;
-      }
-
-      .logo p {
-        color: var(--muted);
-      }
-
-      .form-group {
-        margin-bottom: 18px;
-      }
-
-      label {
-        display: block;
-        color: var(--text);
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-      }
-
-      input {
-        width: 100%;
-        padding: 14px 16px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: #0f172a;
-        color: white;
-        font-size: 15px;
-      }
-
-      input:focus {
-        outline: none;
-        border-color: var(--primary);
-      }
-
-      button {
-        width: 100%;
-        padding: 16px;
-        border: none;
-        border-radius: 12px;
-        background: var(--primary);
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.2s;
-      }
-
-      button:hover {
-        background: var(--primary-hover);
-      }
-
-      .status {
-        margin-top: 20px;
-        text-align: center;
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      .version {
-        margin-top: 24px;
-        text-align: center;
-        color: #64748b;
-        font-size: 0.8rem;
-      }
-
-      dialog {
-        width: min(420px, calc(100% - 32px));
-        margin: auto;
-        padding: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        background: var(--card);
-        color: var(--text);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-      }
-
-      dialog::backdrop {
-        background: rgba(2, 6, 23, 0.72);
-        backdrop-filter: blur(4px);
-      }
-
-      dialog h2 {
-        margin-bottom: 10px;
-      }
-
-      dialog p {
-        margin-bottom: 22px;
-        color: var(--muted);
-        line-height: 1.5;
-      }
+      :root { color-scheme: dark; --bg:#0f172a; --card:#1e293b; --primary:#d97706; --text:#f8fafc; --muted:#94a3b8; --border:#475569; }
+      * { box-sizing:border-box; }
+      body { min-height:100vh; margin:0; padding:20px; display:grid; place-items:center; background:linear-gradient(135deg,#0f172a,#1e293b); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+      .card { width:min(480px,100%); padding:32px; border:1px solid rgba(255,255,255,.08); border-radius:24px; background:rgba(30,41,59,.96); box-shadow:0 20px 50px rgba(0,0,0,.35); }
+      h1 { margin:0 0 6px; }
+      .lead,.status { color:var(--muted); }
+      label { display:block; margin:18px 0 7px; font-weight:600; }
+      input,button { width:100%; padding:14px 16px; border-radius:12px; font:inherit; }
+      input { border:1px solid var(--border); background:var(--bg); color:var(--text); }
+      input:focus { outline:2px solid rgba(217,119,6,.35); border-color:var(--primary); }
+      button { margin-top:22px; border:0; background:var(--primary); color:white; font-weight:700; cursor:pointer; }
+      button:disabled { opacity:.6; cursor:wait; }
+      .status { min-height:1.5em; margin-top:18px; text-align:center; }
+      .status.error { color:#fca5a5; }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="card">
-        <div class="logo">
-          <h1>🍺 B-RMS</h1>
-          <p>Система віддаленого керування броварнею</p>
-        </div>
-
-        <form action="/save" method="POST">
-          <div class="form-group">
-            <label>Назва мережі Wi-Fi (SSID)</label>
-            <input type="text" name="ssid" placeholder="Домашня мережа Wi-Fi" />
-          </div>
-
-          <div class="form-group">
-            <label>Пароль Wi-Fi</label>
-            <input type="password" name="password" placeholder="********" />
-          </div>
-
-          <div class="form-group">
-            <label>URL сервера B-RMS</label>
-            <input
-              type="text"
-              name="server"
-              value="http://beer.lan"
-            />
-          </div>
-
-          <button type="submit">Зберегти й підключитися</button>
-        </form>
-
-        <div class="status">Налаштуйте контролер броварні</div>
-
-        <div class="version">Контролер B-RMS v1.0</div>
-      </div>
-    </div>
-    <dialog id="saved-modal">
-      <h2>Налаштування збережено</h2>
-      <p>Контролер застосує нові параметри та перезавантажиться.</p>
-      <form method="dialog">
-        <button type="submit">Зрозуміло</button>
+    <main class="card">
+      <h1>🍺 B-RMS</h1>
+      <p class="lead">Початкове налаштування контролера броварні</p>
+      <form id="config-form">
+        <label for="ssid">Назва мережі Wi-Fi</label>
+        <input id="ssid" autocomplete="off" required />
+        <label for="password">Пароль Wi-Fi</label>
+        <input id="password" type="password" autocomplete="new-password" />
+        <label for="server">Адреса сервера B-RMS</label>
+        <input id="server" type="url" value="http://beer.lan" required />
+        <button id="submit-button" type="submit">Зберегти й перезапустити</button>
       </form>
-    </dialog>
-      <script>
-        async function saveConfig() {
+      <div id="status" class="status" role="status"></div>
+    </main>
+    <script>
+      const form = document.getElementById("config-form");
+      const button = document.getElementById("submit-button");
+      const status = document.getElementById("status");
 
-            await fetch("/api/config", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    ssid: document.getElementById("ssid").value,
-                    password: document.getElementById("password").value,
-                    server_url: document.getElementById("server").value
-                })
-            });
-
-            document.getElementById("saved-modal").showModal();
-        }    
-</script>
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        status.classList.remove("error");
+        status.textContent = "Збереження налаштувань…";
+        try {
+          const response = await fetch("/api/config", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              ssid: document.getElementById("ssid").value.trim(),
+              password: document.getElementById("password").value,
+              server_url: document.getElementById("server").value.trim()
+            })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Не вдалося зберегти налаштування");
+          status.textContent = "Збережено. Контролер перезапускається…";
+        } catch (error) {
+          status.classList.add("error");
+          status.textContent = error.message;
+          button.disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>

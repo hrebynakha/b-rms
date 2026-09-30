@@ -64,7 +64,7 @@ class BrewSessionStartApiTests(TestCase):
         response = self.client.post(self.url)
 
         self.assertEqual(response.status_code, 409)
-        self.assertIn("Demo scripts are inactive", response.json()["detail"])
+        self.assertIn("No fresh telemetry", response.json()["detail"])
 
     def test_session_can_be_paused_and_resumed(self):
         self.client.post(self.url)

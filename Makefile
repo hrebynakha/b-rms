@@ -5,6 +5,15 @@ migrate:
 migrations:
 	python manage.py makemigrations
 
+firmware:
+	pio run -e b-rms
+
+firmware-fs:
+	pio run -e b-rms -t uploadfs
+
+firmware-upload:
+	pio run -e b-rms -t upload
+
 esp:
 	python scripts/fake_esp32_on.py
 sensor:

@@ -91,6 +91,12 @@ msgstr "У цій броварні вже виконується сесія ва
 msgid "Demo scripts are inactive. Start the ESP32 and telemetry scripts."
 msgstr "Демо-скрипти неактивні. Запустіть скрипти ESP32 і телеметрії."
 
+msgid "No fresh telemetry from the temperature sensor."
+msgstr "Немає актуальної телеметрії від датчика температури."
+
+msgid "Waiting to start"
+msgstr "Очікує запуску"
+
 #: apps/main/templates/main/brew_session_detail.html:4
 msgid "Brew Session"
 msgstr "Сесія варіння"

@@ -344,7 +344,7 @@ class SessionEngineTests(TestCase):
         Telemetry.objects.filter(pk=self.telemetry.pk).update(created_at=stale_time)
 
         self.assertFalse(demo_hardware_is_ready(self.brewery))
-        with self.assertRaisesMessage(SessionStartError, "Demo scripts are inactive"):
+        with self.assertRaisesMessage(SessionStartError, "No fresh telemetry"):
             start_session(self.session.id)
 
     def test_dashboard_shows_active_session_and_start_button(self):
@@ -352,7 +352,7 @@ class SessionEngineTests(TestCase):
 
         self.assertContains(response, "Active brew session")
         self.assertContains(response, "Start 3-minute demo")
-        self.assertNotContains(response, "Demo scripts are inactive")
+        self.assertNotContains(response, "No fresh telemetry")
         self.assertEqual(response.context["breweries"][0].active_session, self.session)
 
     def test_dashboard_disables_demo_when_telemetry_is_stale(self):
@@ -361,8 +361,17 @@ class SessionEngineTests(TestCase):
 
         response = self.client.get(reverse("brewery-list"))
 
-        self.assertContains(response, "Demo scripts are inactive")
+        self.assertContains(response, "No fresh telemetry")
         self.assertContains(response, "disabled")
+
+    def test_pending_session_does_not_mark_first_step_as_running(self):
+        response = self.client.get(
+            reverse("brew-session-detail", args=[self.session.id])
+        )
+
+        self.assertFalse(response.context["step_progresses"][0]["is_current"])
+        self.assertNotContains(response, "brew-step-current")
+        self.assertContains(response, "Waiting to start")
 
     def test_session_detail_marks_completed_and_current_steps(self):
         self.session.status = BrewSessionStatus.RUNNING
@@ -375,6 +384,7 @@ class SessionEngineTests(TestCase):
         )
 
         self.assertEqual(response.context["session"].current_step_index, 1)
+        self.assertTrue(response.context["step_progresses"][0]["is_completed"])
         self.assertContains(response, "brew-step-completed", count=1)
         self.assertContains(response, "brew-step-current", count=1)
         self.assertContains(response, "Waiting for temperature")

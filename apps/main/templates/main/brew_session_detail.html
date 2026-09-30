@@ -72,7 +72,7 @@
                                 </button>
                                 {% if not demo_ready %}
                                     <div class="alert alert-warning py-2 px-3 mb-0 small" role="alert">
-                                        {% translate "Demo scripts are inactive. Start the ESP32 and telemetry scripts." %}
+                                        {% translate "No fresh telemetry from the temperature sensor." %}
                                     </div>
                                 {% endif %}
                                 <div class="alert alert-danger mt-3 mb-0 d-none js-start-error"
@@ -176,10 +176,11 @@
                                         {{ step.name }}
                                     </strong>
                                     {% if item.is_completed %}
-                                        <span class="text-success"
+                                        <span class="badge bg-success d-inline-flex align-items-center gap-1"
                                               title="{% translate "Completed" %}"
                                               aria-label="{% translate "Completed" %}">
-                                            <i class="bi bi-check-circle-fill fs-5"></i>
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            {% translate "Completed" %}
                                         </span>
                                     {% elif item.is_current %}
                                         <span class="badge bg-primary d-inline-flex align-items-center gap-2">
@@ -194,29 +195,33 @@
                                                 {% translate "In progress" %}
                                             {% endif %}
                                         </span>
+                                    {% elif session.status == "pending" and forloop.first %}
+                                        <span class="badge bg-secondary">{% translate "Waiting to start" %}</span>
                                     {% endif %}
                                 </div>
-                                <div>
-                                    {{ step.target_temperature }}°C
-                                    · {{ step.get_mode_display }}
-                                </div>
-                                {% if step.mode == "hold_temperature" %}
-                                    <div class="small text-body-secondary mt-1">
-                                        {% if item.is_current or item.is_completed %}
-                                            {% blocktranslate with elapsed_minutes=item.elapsed_minutes elapsed_seconds=item.elapsed_remainder duration_minutes=item.duration_minutes duration_seconds=item.duration_remainder %}{{ elapsed_minutes }} min {{ elapsed_seconds }} sec / {{ duration_minutes }} min {{ duration_seconds }} sec{% endblocktranslate %}
-                                        {% else %}
-                                            {% blocktranslate with minutes=step.duration_minutes %}Duration: {{ minutes }} min{% endblocktranslate %}
-                                        {% endif %}
+                                {% if not item.is_completed %}
+                                    <div>
+                                        {{ step.target_temperature }}°C
+                                        · {{ step.get_mode_display }}
                                     </div>
-                                    <div class="progress step-progress mt-2">
-                                        <div class="progress-bar {% if item.is_current and session.status == 'running' %}progress-bar-striped progress-bar-animated{% endif %}"
-                                             style="width: {{ item.percent }}%"></div>
-                                    </div>
-                                {% elif item.is_current %}
-                                    <div class="small text-info mt-1">{% translate "Waiting to reach the target; no timer is running." %}</div>
-                                    <div class="progress step-progress step-progress-indeterminate mt-2">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated"></div>
-                                    </div>
+                                    {% if step.mode == "hold_temperature" %}
+                                        <div class="small text-body-secondary mt-1">
+                                            {% if item.is_current %}
+                                                {% blocktranslate with elapsed_minutes=item.elapsed_minutes elapsed_seconds=item.elapsed_remainder duration_minutes=item.duration_minutes duration_seconds=item.duration_remainder %}{{ elapsed_minutes }} min {{ elapsed_seconds }} sec / {{ duration_minutes }} min {{ duration_seconds }} sec{% endblocktranslate %}
+                                            {% else %}
+                                                {% blocktranslate with minutes=step.duration_minutes %}Duration: {{ minutes }} min{% endblocktranslate %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="progress step-progress mt-2">
+                                            <div class="progress-bar {% if item.is_current and session.status == 'running' %}progress-bar-striped progress-bar-animated{% endif %}"
+                                                 style="width: {{ item.percent }}%"></div>
+                                        </div>
+                                    {% elif item.is_current %}
+                                        <div class="small text-info mt-1">{% translate "Waiting to reach the target; no timer is running." %}</div>
+                                        <div class="progress step-progress step-progress-indeterminate mt-2">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated"></div>
+                                        </div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         {% endwith %}

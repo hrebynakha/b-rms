@@ -172,7 +172,7 @@ def start_session(session_id: int, *, now=None) -> Tuple[BrewSession, SessionPro
 
     if not demo_hardware_is_ready(session.brewery, now=now):
         raise SessionStartError(
-            _("Demo scripts are inactive. Start the ESP32 and telemetry scripts.")
+            _("No fresh telemetry from the temperature sensor.")
         )
 
     steps = list(session.recipe.steps.all())
@@ -259,7 +259,7 @@ def resume_session(session_id: int, *, now=None):
         raise SessionStateError(_("Only a paused session can be resumed."))
     if not demo_hardware_is_ready(session.brewery, now=now):
         raise SessionStateError(
-            _("Demo scripts are inactive. Start the ESP32 and telemetry scripts.")
+            _("No fresh telemetry from the temperature sensor.")
         )
     paused_for = max(0, int((now - session.paused_at).total_seconds()))
     session.paused_seconds += paused_for

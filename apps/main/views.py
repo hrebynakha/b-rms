@@ -393,7 +393,13 @@ def brew_session_detail_view(
         is_completed = index < session.current_step_index
         is_current = (
             index == session.current_step_index
-            and session.status != BrewSessionStatus.COMPLETED
+            and session.status
+            in [
+                BrewSessionStatus.RUNNING,
+                BrewSessionStatus.HEATING,
+                BrewSessionStatus.WAITING,
+                BrewSessionStatus.PAUSED,
+            ]
         )
         elapsed = duration if is_completed else 0
         if is_current:

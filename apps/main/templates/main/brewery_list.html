@@ -57,7 +57,7 @@
                                 </button>
                                 {% if not brewery.demo_ready %}
                                     <div class="alert alert-warning mt-3 mb-0" role="alert">
-                                        {% translate "Demo scripts are inactive. Start the ESP32 and telemetry scripts." %}
+                                        {% translate "No fresh telemetry from the temperature sensor." %}
                                     </div>
                                 {% endif %}
                             {% elif brewery.active_session.status == "running" or brewery.active_session.status == "heating" or brewery.active_session.status == "waiting_temperature" or brewery.active_session.status == "paused" %}
