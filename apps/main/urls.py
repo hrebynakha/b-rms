@@ -1,6 +1,8 @@
 from django.urls import path
+from apps.main.manual_views import manual_control_view, manual_status_view, manual_action_view
 from apps.main.views import (
     brewery_list_view,
+    controller_reset_view,
     brewery_delete_view,
     sensor_detail_view,
     recipe_list_view,
@@ -15,6 +17,10 @@ from apps.main.views import (
 )
 
 urlpatterns = [
+    path("controllers/<int:controller_id>/manual/", manual_control_view, name="manual-control"),
+    path("controllers/<int:controller_id>/manual/status/", manual_status_view, name="manual-status"),
+    path("controllers/<int:controller_id>/manual/action/", manual_action_view, name="manual-action"),
+    path("controllers/<int:controller_id>/reset/", controller_reset_view, name="controller-reset"),
     path(
         "",
         brewery_list_view,

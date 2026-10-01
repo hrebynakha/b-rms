@@ -1,0 +1,35 @@
+from django.utils.translation import gettext as _
+
+
+def manual_messages():
+    return {
+        "sensor_chart": _("Sensor °C"),
+        "target_chart": _("Target °C"),
+        "requested_chart": _("Requested mean · V"),
+        "measured_chart": _("Measured ADC · V"),
+        "voltage_axis": _("Mean voltage · V"),
+        "no_previous": _("No previous reading"),
+        "trend": _("%(change)s °C · previous %(previous)s °C"),
+        "live": _("Live"),
+        "stale_data": _("Stale data"),
+        "waiting_sensor": _("Waiting for sensor"),
+        "voltage": _("%(voltage)s V"),
+        "power": _("%(power)s%% power"),
+        "no_data": _("No fresh data"),
+        "overheat": _("Overheat"),
+        "stopped": _("Stopped"),
+        "heating": _("Heating"),
+        "at_target": _("Target reached"),
+        "saved_target": _("Saved target: %(target)s °C · overheat threshold: %(threshold)s °C"),
+        "overheat_warning": _("Overheat: %(temperature)s °C at a %(target)s °C target. SSR output is off. Wait for cooling."),
+        "no_data_warning": _("No fresh sensor data. SSR output is off."),
+        "esp_applied": _("ESP applied PWM: %(power)s%% · %(time)s"),
+        "esp_waiting": _("Waiting for ESP to confirm the current PWM output"),
+        "adc_missing": _("ADC: no measurement (feedback disabled)"),
+        "adc_measured": _("ADC: %(voltage)s V"),
+        "stale_measurement": _("stale measurement"),
+        "status_error": _("Unable to retrieve controller status"),
+        "action_error": _("Unable to change control mode"),
+        "retry_hint": _("If the command is unconfirmed, check the status and retry."),
+        "network_error": _("Connection failed. Check the connection and retry."),
+    }

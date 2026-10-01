@@ -4,6 +4,7 @@ from .sensor import Sensor
 from .recipe import Recipe, RecipeStep
 from .session import BrewSession
 from .telemetry import Telemetry
+from .manual_control import ManualControl, ManualControlSample
 
 __all__ = [
     "Brewery",

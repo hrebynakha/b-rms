@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static l10n i18n %}
+{% block title %}{% translate 'Manual control' %} · {{ controller.name }}{% endblock %}
+{% block content %}
+<div id="manual-panel" class="page-shell" data-status-url="{% url 'manual-status' controller.id %}" data-action-url="{% url 'manual-action' controller.id %}">
+    <a href="{% url 'brewery-list' %}" class="back-link"><i class="bi bi-arrow-left"></i> {% translate 'Controllers' %}</a>
+    <div class="page-heading mt-3 mb-4">
+        <div><span class="eyebrow">{% translate 'Temperature control panel' %}</span><h1>{{ controller.name }}</h1><span class="badge text-bg-info">{% translate 'Live PWM output' %}</span></div>
+        <button class="btn btn-danger btn-lg" type="button" id="manual-stop" {% if not control.active %}disabled{% endif %}><i class="bi bi-stop-fill"></i> {% translate 'Stop' %}</button>
+    </div>
+    <div id="manual-error" class="alert alert-danger d-none" role="alert"></div>
+    <div id="manual-warning" class="alert alert-warning d-none" role="alert" aria-live="polite"></div>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div id="manual-target-card" class="card app-card manual-target-card h-100"><div class="card-body p-4">
+                <h5>{% translate 'Target temperature' %}</h5>
+                <div id="manual-target-reached" class="manual-target-reached d-none" role="status" aria-live="polite">
+                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                    {% translate 'Target reached' %}
+                </div>
+                <form id="manual-form">
+                    {% csrf_token %}
+                    <div class="manual-dial my-4">
+                        <button type="button" class="btn manual-step-button" id="target-minus" aria-label="{% translate 'Decrease temperature' %}"><i class="bi bi-dash-lg"></i></button>
+                        <div><input class="manual-target" id="manual-target" name="target_temperature" type="number" min="30" max="100" step="1" value="{{ control.target_temperature|floatformat:"0u" }}" required aria-label="{% translate 'Target temperature' %}"><span class="fs-4">°C</span></div>
+                        <button type="button" class="btn manual-step-button" id="target-plus" aria-label="{% translate 'Increase temperature' %}"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                    <input id="target-range" class="form-range" type="range" min="30" max="100" step="1" value="{{ control.target_temperature|floatformat:"0u" }}" aria-label="{% translate 'Target temperature' %}">
+                    <div class="d-flex justify-content-between text-body-secondary mb-4"><small>30 °C</small><small>100 °C</small></div>
+                    <label class="form-label" for="warning-delta">{% translate 'Warn above target by' %}</label>
+                    <div class="input-group mb-3">
+                        <input id="warning-delta" class="form-control" type="number" min="1" max="50" step="1" name="warning_delta" value="{{ control.warning_delta|floatformat:"0u" }}" required>
+                        <select class="form-select" name="warning_mode" aria-label="{% translate 'Overheat threshold units' %}">
+                            <option value="degrees" {% if control.warning_mode == 'degrees' %}selected{% endif %}>°C</option>
+                            <option value="percent" {% if control.warning_mode == 'percent' %}selected{% endif %}>{% translate '% of target' %}</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2"><button type="submit" name="action" value="start" class="btn btn-primary flex-fill">{% translate 'Start' %}</button><button type="submit" name="action" value="apply" class="btn btn-outline-primary flex-fill">{% translate 'Apply' %}</button></div>
+                    <small id="saved-target" class="text-body-secondary d-block mt-3"></small>
+                </form>
+            </div></div>
+        </div>
+        <div class="col-lg-7">
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6"><div class="card app-card"><div class="card-body p-4">
+                    <span class="eyebrow">{% translate 'Sensor temperature' %}</span><div id="live-temperature" class="manual-reading">— °C</div>
+                    <div id="temperature-trend" class="text-body-secondary"></div><small id="temperature-time" class="text-body-secondary"></small>
+                </div></div></div>
+                <div class="col-sm-6"><div class="card app-card"><div class="card-body p-4">
+                    <span class="eyebrow">{% translate 'SSR output · GPIO25' %}</span><div id="ssr-voltage" class="manual-reading">{% translate '0 V' %}</div>
+                    <div id="ssr-power">{% translate '0% power' %}</div><small class="text-body-secondary">{% translate 'Calculated mean PWM voltage' %}</small>
+                    <div id="ssr-measured" class="mt-2 fw-semibold">{% translate 'ADC: no measurement' %}</div>
+                </div></div></div>
+            </div>
+            <div class="card app-card"><div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h5 class="mb-0">{% translate 'Temperature and output' %}</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" id="manual-chart-refresh" class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="bi bi-arrow-clockwise"></i> {% translate 'Refresh' %}
+                        </button>
+                        <span id="manual-status" class="badge rounded-pill text-bg-secondary">{% translate 'Loading…' %}</span>
+                    </div>
+                </div>
+                <div class="chart-shell"><canvas id="manual-chart" aria-label="{% translate 'Temperature and SSR output chart' %}"></canvas></div>
+                <div id="esp-report" class="small text-body-secondary mt-3" aria-live="polite"></div>
+            </div></div>
+        </div>
+    </div>
+    <p class="text-body-secondary small mt-4">{% translate 'GPIO25 outputs 1 kHz PWM: 0/3.3 V pulses with a variable duty cycle. Connect the multimeter between GPIO25 and GND. To chart measured voltage, wire the divider GPIO25 → 10 kΩ → GPIO35 → 10 kΩ → GND and enable ADC in the firmware. Stop takes effect when the board receives the command. The board switches the output off independently if commands or sensor readings are lost.' %}</p>
+</div>
+{% endblock %}
+{% block extra_js %}{{ manual_messages|json_script:"manual-messages" }}<script src="{% static 'js/manual-control.js' %}"></script>{% endblock %}

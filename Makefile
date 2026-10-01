@@ -5,6 +5,9 @@ migrate:
 migrations:
 	python manage.py makemigrations
 
+translations:
+	python scripts/compile_translations.py
+
 firmware:
 	pio run -e b-rms
 

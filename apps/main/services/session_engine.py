@@ -167,6 +167,10 @@ def start_session(session_id: int, *, now=None) -> Tuple[BrewSession, SessionPro
     now = now or timezone.now()
     session = BrewSession.objects.select_for_update().get(pk=session_id)
 
+    from apps.main.models import ManualControl
+    if ManualControl.objects.filter(controller__brewery=session.brewery, active=True).exists():
+        raise SessionStartError(_("Stop manual temperature control first."))
+
     if session.status != BrewSessionStatus.PENDING:
         raise SessionStartError(_("Only a pending brew session can be started."))
 

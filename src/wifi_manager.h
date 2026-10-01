@@ -20,3 +20,4 @@ bool hasStoredConfig();
 const DeviceConfig &getDeviceConfig();
 void saveDeviceConfig(const String &ssid, const String &password, const String &serverUrl);
 void clearDeviceConfig();
+void enterWiFiSetup();

@@ -1,5 +1,4 @@
 #include <ArduinoJson.h>
-#include <LittleFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
 
@@ -10,6 +9,12 @@ namespace {
 constexpr char AP_SSID[] = "B-RMS-Setup";
 constexpr char AP_PASSWORD[] = "brewmaster";
 WebServer server(80);
+
+extern const char portalHtml[] asm("_binary_src_index_html_start");
+
+void sendPortal() {
+    server.send_P(200, "text/html; charset=utf-8", portalHtml);
+}
 
 void sendJson(int status, const String &body) {
     server.send(status, "application/json", body);
@@ -23,19 +28,9 @@ void startProvisioningPortal() {
         return;
     }
 
-    if (!LittleFS.begin(true)) {
-        Serial.println("LittleFS mount failed; provisioning page is unavailable.");
-    }
-
-    server.on("/", HTTP_GET, []() {
-        File portal = LittleFS.open("/index.html", "r");
-        if (!portal) {
-            server.send(500, "text/plain", "Portal file is missing. Upload the LittleFS image.");
-            return;
-        }
-        server.streamFile(portal, "text/html; charset=utf-8");
-        portal.close();
-    });
+    server.on("/", HTTP_GET, sendPortal);
+    server.on("/index.html", HTTP_GET, sendPortal);
+    server.on("/favicon.ico", HTTP_GET, []() { server.send(204); });
     server.on("/api/config", HTTP_POST, []() {
         if (!server.hasArg("plain")) {
             sendJson(400, "{\"error\":\"Request body is required\"}");

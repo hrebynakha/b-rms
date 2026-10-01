@@ -108,6 +108,17 @@
                                     {% else %}
                                         <span class="badge bg-danger">{% translate "OFFLINE" %}</span>
                                     {% endif %}
+                                    <a href="{% url 'manual-control' controller.id %}" class="btn btn-sm btn-outline-light ms-2">
+                                        <i class="bi bi-sliders"></i> {% translate "Manual control" %}
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-warning ms-2"
+                                            data-bs-toggle="modal" data-bs-target="#resetControllerModal{{ controller.id }}"
+                                            {% if controller.wifi_reset_command %}disabled{% endif %}>
+                                        {% translate "Reset Wi-Fi" %}
+                                    </button>
+                                    {% if controller.wifi_reset_command %}
+                                        <div class="text-warning small mt-2">{% translate "Waiting for Wi-Fi setup" %}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <hr />
@@ -130,6 +141,29 @@
                                         {% endwith %}
                                     </div>
                                 {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="resetControllerModal{{ controller.id }}" tabindex="-1"
+                         aria-labelledby="resetControllerLabel{{ controller.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content bg-dark">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="resetControllerLabel{{ controller.id }}">{% translate "Reset Wi-Fi" %}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
+                                </div>
+                                <form method="post" action="{% url 'controller-reset' controller.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <p><strong>{{ controller.name }}</strong></p>
+                                        <p>{% translate "Clear saved connection settings and switch this controller to Wi-Fi setup? Telemetry will stop until you configure it again." %}</p>
+                                        <p>{% translate "Connect to B-RMS-Setup (password: brewmaster) and open http://192.168.4.1. An offline controller will receive the command when it reconnects." %}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                                        <button type="submit" class="btn btn-warning">{% translate "Confirm reset" %}</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

@@ -595,3 +595,46 @@ body {
         flex-wrap: wrap;
     }
 }
+.manual-dial { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.manual-target { width: 110px; border: 0; background: transparent; color: var(--bs-body-color); font-size: 3rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+.manual-target::-webkit-inner-spin-button,
+.manual-target::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.manual-step-button { width: 48px; height: 48px; flex: 0 0 48px; padding: 0; border-radius: 50%; display: inline-grid; place-items: center; line-height: 1; font-size: 1.25rem; color: var(--bs-primary); border: 1px solid rgba(var(--bs-primary-rgb), .3); background: rgba(var(--bs-primary-rgb), .1); }
+.manual-step-button:hover { color: var(--bs-primary); border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .2); }
+.manual-step-button:focus-visible { outline: 3px solid rgba(var(--bs-primary-rgb), .4); outline-offset: 3px; }
+.manual-reading { font-size: 2.2rem; font-weight: 700; margin: .75rem 0; font-variant-numeric: tabular-nums; }
+
+.manual-target-card {
+    position: relative;
+    isolation: isolate;
+    transition: border-color .4s ease;
+}
+
+.manual-target-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 15%, rgba(34, 197, 94, .14), transparent 75%);
+    box-shadow: 0 0 30px 5px rgba(34, 197, 94, .16), inset 0 0 24px rgba(34, 197, 94, .08);
+    opacity: 0;
+    transition: opacity .4s ease;
+}
+
+.manual-target-card > .card-body { position: relative; z-index: 1; }
+.manual-target-card.is-target-reached { border-color: rgba(34, 197, 94, .55); }
+.manual-target-card.is-target-reached::before { animation: manual-target-glow 3.2s ease-in-out infinite; }
+.manual-target-card.is-target-reached .manual-target { color: var(--bs-success-text-emphasis); }
+.manual-target-reached { display: flex; align-items: center; gap: .5rem; color: var(--bs-success-text-emphasis); font-size: .875rem; font-weight: 600; }
+
+@keyframes manual-target-glow {
+    0%, 100% { opacity: .4; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .manual-target-card,
+    .manual-target-card::before { transition: none; }
+    .manual-target-card.is-target-reached::before { animation: none; opacity: .65; }
+}

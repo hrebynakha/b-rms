@@ -30,6 +30,8 @@ class Controller(models.Model):
 
     is_enabled = models.BooleanField(default=True)
 
+    wifi_reset_command = models.UUIDField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

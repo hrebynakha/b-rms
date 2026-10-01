@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="uk">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Налаштування B-RMS</title>
+    <title data-trans="B-RMS setup">B-RMS setup</title>
     <style>
       :root { color-scheme: dark; --bg:#0f172a; --card:#1e293b; --primary:#d97706; --text:#f8fafc; --muted:#94a3b8; --border:#475569; }
       * { box-sizing:border-box; }
@@ -19,20 +19,24 @@
       button:disabled { opacity:.6; cursor:wait; }
       .status { min-height:1.5em; margin-top:18px; text-align:center; }
       .status.error { color:#fca5a5; }
+      .language-picker { display:flex; justify-content:flex-end; gap:8px; align-items:center; margin-bottom:16px; }
+      .language-picker label { margin:0; color:var(--muted); font-size:.85rem; }
+      .language-picker select { padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
     </style>
   </head>
   <body>
     <main class="card">
+      <div class="language-picker"><label for="language" data-trans="Language">Language</label><select id="language"><option value="en">English</option><option value="uk">Українська</option></select></div>
       <h1>🍺 B-RMS</h1>
-      <p class="lead">Початкове налаштування контролера броварні</p>
+      <p class="lead" data-trans="Initial brewery controller setup">Initial brewery controller setup</p>
       <form id="config-form">
-        <label for="ssid">Назва мережі Wi-Fi</label>
+        <label for="ssid" data-trans="Wi-Fi network name">Wi-Fi network name</label>
         <input id="ssid" autocomplete="off" required />
-        <label for="password">Пароль Wi-Fi</label>
+        <label for="password" data-trans="Wi-Fi password">Wi-Fi password</label>
         <input id="password" type="password" autocomplete="new-password" />
-        <label for="server">Адреса сервера B-RMS</label>
+        <label for="server" data-trans="B-RMS server URL">B-RMS server URL</label>
         <input id="server" type="url" value="http://beer.lan" required />
-        <button id="submit-button" type="submit">Зберегти й перезапустити</button>
+        <button id="submit-button" type="submit" data-trans="Save and restart">Save and restart</button>
       </form>
       <div id="status" class="status" role="status"></div>
     </main>
@@ -40,12 +44,47 @@
       const form = document.getElementById("config-form");
       const button = document.getElementById("submit-button");
       const status = document.getElementById("status");
+      const languagePicker = document.getElementById("language");
+      const translations = {
+        "B-RMS setup": "Налаштування B-RMS",
+        "Language": "Мова",
+        "Initial brewery controller setup": "Початкове налаштування контролера броварні",
+        "Wi-Fi network name": "Назва мережі Wi-Fi",
+        "Wi-Fi password": "Пароль Wi-Fi",
+        "B-RMS server URL": "Адреса сервера B-RMS",
+        "Save and restart": "Зберегти й перезапустити",
+        "Saving settings…": "Збереження налаштувань…",
+        "Unable to save settings": "Не вдалося зберегти налаштування",
+        "Saved. The controller is restarting…": "Збережено. Контролер перезапускається…",
+        "Request body is required": "Потрібне тіло запиту",
+        "Invalid JSON": "Некоректний JSON",
+        "SSID and a valid server URL are required": "Потрібні назва мережі та коректна адреса сервера",
+        "Connection failed. Check the connection and retry.": "Помилка з’єднання. Перевірте підключення та повторіть."
+      };
+      let language = navigator.language.toLowerCase().startsWith("uk") ? "uk" : "en";
+      try { const saved = localStorage.getItem("b-rms-setup-language"); if (["en", "uk"].includes(saved)) language = saved; } catch (_) {}
+      // This standalone ESP page cannot use Django template tags; trans serves
+      // the same EN-source/UK-catalog role locally, without a server connection.
+      const trans = message => language === "uk" ? translations[message] || message : message;
+      function applyLanguage() {
+        document.documentElement.lang = language;
+        languagePicker.value = language;
+        document.querySelectorAll("[data-trans]").forEach(element => { element.textContent = trans(element.dataset.trans); });
+        if (status.dataset.message) status.textContent = trans(status.dataset.message);
+      }
+      function setStatus(message) { status.dataset.message = message; status.textContent = trans(message); }
+      languagePicker.addEventListener("change", () => {
+        language = languagePicker.value;
+        try { localStorage.setItem("b-rms-setup-language", language); } catch (_) {}
+        applyLanguage();
+      });
+      applyLanguage();
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         button.disabled = true;
         status.classList.remove("error");
-        status.textContent = "Збереження налаштувань…";
+        setStatus("Saving settings…");
         try {
           const response = await fetch("/api/config", {
             method: "POST",
@@ -57,11 +96,11 @@
             })
           });
           const data = await response.json();
-          if (!response.ok) throw new Error(data.error || "Не вдалося зберегти налаштування");
-          status.textContent = "Збережено. Контролер перезапускається…";
+          if (!response.ok) throw new Error(data.error || "Unable to save settings");
+          setStatus("Saved. The controller is restarting…");
         } catch (error) {
           status.classList.add("error");
-          status.textContent = error.message;
+          setStatus(error.name === "TypeError" ? "Connection failed. Check the connection and retry." : error.message);
           button.disabled = false;
         }
       });

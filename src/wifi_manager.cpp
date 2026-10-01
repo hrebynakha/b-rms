@@ -111,3 +111,12 @@ void clearDeviceConfig() {
     preferences.clear();
     preferences.end();
 }
+
+void enterWiFiSetup() {
+    clearDeviceConfig();
+    config = DeviceConfig{};
+    currentMode = DeviceMode::Provisioning;
+    WiFi.setAutoReconnect(false);
+    WiFi.disconnect(true);
+    startProvisioningPortal();
+}

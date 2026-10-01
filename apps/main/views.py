@@ -1,4 +1,6 @@
 from datetime import timedelta
+from uuid import uuid4
+from django.views.decorators.http import require_POST
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -15,6 +17,7 @@ from apps.main.forms import (
     TelemetryCleanupForm,
 )
 from apps.main.models.brewery import Brewery
+from apps.main.models import Controller
 from apps.main.models.sensor import Sensor
 from apps.main.models.telemetry import Telemetry
 from apps.main.models.recipe import Recipe, RecipeStep
@@ -31,6 +34,16 @@ from apps.main.services.session_engine import (
 
 def index(request):
     return render(request, "main/index.html")
+
+
+@require_POST
+def controller_reset_view(request, controller_id):
+    controller = get_object_or_404(Controller, pk=controller_id)
+    Controller.objects.filter(pk=controller.pk, wifi_reset_command__isnull=True).update(
+        wifi_reset_command=uuid4()
+    )
+    messages.success(request, _("Wi-Fi setup command queued. Waiting for the controller."))
+    return redirect("brewery-list")
 
 
 def brewery_list_view(request):
@@ -455,7 +468,7 @@ def brewery_delete_view(request):
 
             messages.success(
                 request,
-                "Brewery deleted successfully.",
+                _("Brewery deleted successfully."),
             )
 
     return redirect("brewery-list")
@@ -478,7 +491,7 @@ def recipe_delete_view(request):
 
             messages.success(
                 request,
-                "Recipe deleted successfully.",
+                _("Recipe deleted successfully."),
             )
 
     return redirect("recipe-list")

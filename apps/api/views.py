@@ -1,4 +1,6 @@
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
@@ -10,6 +12,8 @@ from apps.main.models import Brewery
 from apps.main.models import Controller
 from apps.main.models import Sensor
 from apps.main.models import Telemetry
+from apps.main.models import ManualControl
+from apps.main.services.manual_control import control_state, update_from_telemetry
 
 
 from apps.api.serializers import TelemetrySerializer
@@ -23,6 +27,51 @@ from apps.main.services.session_engine import (
     resume_session,
     start_session,
 )
+
+
+class ControllerCommandSerializer(serializers.Serializer):
+    mac_address = serializers.CharField()
+    command_id = serializers.UUIDField(required=False)
+
+
+class ControllerCommandsView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        serializer = ControllerCommandSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        controller = get_object_or_404(Controller, mac_address=serializer.validated_data["mac_address"])
+        commands = []
+        if controller.wifi_reset_command:
+            commands.append({"id": str(controller.wifi_reset_command), "type": "wifi_setup"})
+        control = ManualControl.objects.filter(controller=controller).first()
+        manual = control_state(control) if control else {
+            "active": False, "power_percent": 0, "signal_voltage": 0,
+            "revision": 0, "simulation": False, "output_mode": "pwm", "valid_for_ms": 10000,
+        }
+        if control and control.active and manual["status"] in ("no_data", "overheat"):
+            update_from_telemetry(controller)
+            control.refresh_from_db()
+            manual = control_state(control)
+        response = Response({"commands": commands, "manual_control": manual})
+        response["Cache-Control"] = "no-store"
+        return response
+
+    def post(self, request):
+        serializer = ControllerCommandSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if "command_id" not in data:
+            return Response({"detail": _("command_id is required.")}, status=400)
+        controller = get_object_or_404(Controller, mac_address=data["mac_address"])
+        updated = Controller.objects.filter(
+            pk=controller.pk, wifi_reset_command=data["command_id"]
+        ).update(wifi_reset_command=None)
+        # A retry after a lost acknowledgement response must still allow setup.
+        if not updated and Controller.objects.filter(pk=controller.pk, wifi_reset_command__isnull=False).exists():
+            return Response({"detail": _("Command is no longer pending.")}, status=409)
+        return Response({"success": True})
 
 
 class BootstrapView(APIView):
@@ -126,11 +175,8 @@ class TelemetryView(APIView):
                 value=value,
             )
 
-        return Response(
-            {
-                "success": True,
-            }
-        )
+        update_from_telemetry(controller, data.get("manual_control"))
+        return Response({"success": True})
 
 
 class BrewSessionStartView(APIView):

@@ -12,7 +12,7 @@
   };
 
   const refresh = async () => {
-    if (requestInFlight || document.hidden) {
+    if (requestInFlight || document.hidden || document.querySelector(".modal.show")) {
       schedule();
       return;
     }

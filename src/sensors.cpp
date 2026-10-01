@@ -11,21 +11,20 @@ DallasTemperature sensors(&oneWire);
 float lastTemp = 0.0;
 float voltage = 0.0;
 
-
-
-void sensorsInit() {
+void sensorsInit()
+{
     sensors.begin();
 }
 
-
-bool readSensors() {
+bool readSensors()
+{
     sensors.requestTemperatures();
     delay(750);
 
     float t = sensors.getTempCByIndex(0);
 
-
-    if (t == -127.0) {
+    if (t == -127.0)
+    {
         Serial.println("Sensor error");
         return false;
     }
@@ -38,4 +37,3 @@ bool readSensors() {
 
     return true;
 }
-

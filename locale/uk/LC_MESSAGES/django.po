@@ -643,3 +643,206 @@ msgstr "%(current)s°C; допустимий діапазон %(minimum)s–%(ma
 
 #~ msgid "Mash out"
 #~ msgstr "Мешаут"
+
+msgid "Reset Wi-Fi"
+msgstr "Скинути Wi-Fi"
+
+msgid "Waiting for Wi-Fi setup"
+msgstr "Очікуємо переходу до налаштування Wi-Fi"
+
+msgid "Confirm reset"
+msgstr "Підтвердити скидання"
+
+msgid "Wi-Fi setup command queued. Waiting for the controller."
+msgstr "Команду налаштування Wi-Fi додано до черги. Очікуємо контролер."
+
+msgid "Clear saved connection settings and switch this controller to Wi-Fi setup? Telemetry will stop until you configure it again."
+msgstr "Очистити збережені налаштування підключення та перевести контролер у режим налаштування Wi-Fi? Телеметрія припиниться до повторного налаштування."
+
+msgid "Connect to B-RMS-Setup (password: brewmaster) and open http://192.168.4.1. An offline controller will receive the command when it reconnects."
+msgstr "Підключіться до B-RMS-Setup (пароль: brewmaster) та відкрийте http://192.168.4.1. Відключений контролер отримає команду після відновлення з’єднання."
+
+msgid "Manual control"
+msgstr "Ручне керування"
+
+msgid "Temperature control panel"
+msgstr "Пульт керування температурою"
+
+msgid "Live PWM output"
+msgstr "Реальний PWM-вихід"
+
+msgid "Stop"
+msgstr "Стоп"
+
+msgid "Target temperature"
+msgstr "Цільова температура"
+
+msgid "Decrease temperature"
+msgstr "Зменшити температуру"
+
+msgid "Increase temperature"
+msgstr "Збільшити температуру"
+
+msgid "Warn above target by"
+msgstr "Попередження вище цілі на"
+
+msgid "Overheat threshold units"
+msgstr "Одиниці порогу перегріву"
+
+msgid "% of target"
+msgstr "% від цілі"
+
+msgid "Start"
+msgstr "Запустити"
+
+msgid "Apply"
+msgstr "Застосувати"
+
+msgid "Sensor temperature"
+msgstr "Температура датчика"
+
+msgid "SSR output · GPIO25"
+msgstr "Сигнал SSR · GPIO25"
+
+msgid "0 V"
+msgstr "0 В"
+
+msgid "0% power"
+msgstr "0% потужності"
+
+msgid "Calculated mean PWM voltage"
+msgstr "Розрахункова середня напруга PWM"
+
+msgid "ADC: no measurement"
+msgstr "ADC: немає вимірювання"
+
+msgid "Temperature and output"
+msgstr "Температура та сигнал"
+
+msgid "Loading…"
+msgstr "Завантаження…"
+
+msgid "Temperature and SSR output chart"
+msgstr "Графік температури та сигналу SSR"
+
+msgid "GPIO25 outputs 1 kHz PWM: 0/3.3 V pulses with a variable duty cycle. Connect the multimeter between GPIO25 and GND. To chart measured voltage, wire the divider GPIO25 → 10 kΩ → GPIO35 → 10 kΩ → GND and enable ADC in the firmware. Stop takes effect when the board receives the command. The board switches the output off independently if commands or sensor readings are lost."
+msgstr "GPIO25 видає PWM 1 кГц: імпульси 0/3,3 В зі змінною тривалістю. Мультиметр підключайте між GPIO25 та GND. Для графіка виміряної напруги підключіть дільник GPIO25 → 10 кОм → GPIO35 → 10 кОм → GND та увімкніть ADC у прошивці. Стоп застосовується після отримання команди платою. При втраті команд або датчика плата вимикає вихід самостійно."
+
+msgid "Sensor °C"
+msgstr "Датчик °C"
+
+msgid "Target °C"
+msgstr "Ціль °C"
+
+msgid "Requested mean · V"
+msgstr "Задана середня · В"
+
+msgid "Measured ADC · V"
+msgstr "Виміряна ADC · В"
+
+msgid "Mean voltage · V"
+msgstr "Середня напруга · В"
+
+msgid "No previous reading"
+msgstr "Немає попереднього показника"
+
+msgid "%(change)s °C · previous %(previous)s °C"
+msgstr "%(change)s °C · попередня %(previous)s °C"
+
+msgid "Stale data"
+msgstr "Застарілі дані"
+
+msgid "Waiting for sensor"
+msgstr "Очікуємо датчик"
+
+msgid "%(voltage)s V"
+msgstr "%(voltage)s В"
+
+msgid "%(power)s%% power"
+msgstr "%(power)s%% потужності"
+
+msgid "No fresh data"
+msgstr "Немає свіжих даних"
+
+msgid "Overheat"
+msgstr "Перегрів"
+
+msgid "Stopped"
+msgstr "Зупинено"
+
+msgid "Heating"
+msgstr "Нагрівання"
+
+msgid "Target reached"
+msgstr "Ціль досягнута"
+
+msgid "Saved target: %(target)s °C · overheat threshold: %(threshold)s °C"
+msgstr "Збережена ціль: %(target)s °C · поріг перегріву: %(threshold)s °C"
+
+msgid "Overheat: %(temperature)s °C at a %(target)s °C target. SSR output is off. Wait for cooling."
+msgstr "Перегрів: %(temperature)s °C при цілі %(target)s °C. Сигнал SSR вимкнено. Дочекайтеся охолодження."
+
+msgid "No fresh sensor data. SSR output is off."
+msgstr "Немає свіжих даних датчика. Сигнал SSR вимкнено."
+
+msgid "ESP applied PWM: %(power)s%% · %(time)s"
+msgstr "ESP застосувала PWM: %(power)s%% · %(time)s"
+
+msgid "Waiting for ESP to confirm the current PWM output"
+msgstr "Очікуємо підтвердження актуального PWM від ESP"
+
+msgid "ADC: no measurement (feedback disabled)"
+msgstr "ADC: немає вимірювання (зворотний зв’язок вимкнено)"
+
+msgid "ADC: %(voltage)s V"
+msgstr "ADC: %(voltage)s В"
+
+msgid "stale measurement"
+msgstr "застаріле вимірювання"
+
+msgid "Unable to retrieve controller status"
+msgstr "Не вдалося отримати стан контролера"
+
+msgid "Unable to change control mode"
+msgstr "Не вдалося змінити режим"
+
+msgid "If the command is unconfirmed, check the status and retry."
+msgstr "Якщо команда не підтверджена, перевірте стан і повторіть."
+
+msgid "Connection failed. Check the connection and retry."
+msgstr "Помилка з’єднання. Перевірте підключення та повторіть."
+
+msgid "Values must be finite numbers."
+msgstr "Значення мають бути скінченними числами."
+
+msgid "Fresh sensor readings and an available controller are required."
+msgstr "Потрібні свіжі показники датчика та доступний контролер."
+
+msgid "The temperature exceeds the overheat threshold. Wait for cooling."
+msgstr "Температура перевищує поріг перегріву. Дочекайтеся охолодження."
+
+msgid "Finish the active brew session first."
+msgstr "Спочатку завершіть активну сесію варіння."
+
+msgid "Stop manual temperature control first."
+msgstr "Спочатку зупиніть ручне керування температурою."
+
+msgid "Target temperature and warning threshold must be whole numbers."
+msgstr "Потрібні цілі значення температури та порогу попередження."
+
+msgid "Brewery deleted successfully."
+msgstr "Пивоварню успішно видалено."
+
+msgid "Recipe deleted successfully."
+msgstr "Рецепт успішно видалено."
+
+msgid "command_id is required."
+msgstr "Потрібно вказати command_id."
+
+msgid "Command is no longer pending."
+msgstr "Команда більше не очікує виконання."
+msgid "A finite value is required."
+msgstr "Потрібне скінченне числове значення."
+
+msgid "Refresh"
+msgstr "Оновити"
