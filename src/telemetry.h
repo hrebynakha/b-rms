@@ -4,5 +4,5 @@
 
 bool sendTelemetry(const String &payload);
 bool sendInit();
-bool pollWiFiSetupCommand();
+bool pollControllerCommands();
 String buildPayload();

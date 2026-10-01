@@ -29,12 +29,14 @@
     type: 'line', data: {labels: [], datasets: [
       {label: t('sensor_chart'), data: [], borderColor: '#38bdf8', yAxisID: 'temperature', tension: .25},
       {label: t('target_chart'), data: [], borderColor: '#94a3b8', borderDash: [6, 4], yAxisID: 'temperature'},
-      {label: t('requested_chart'), data: [], borderColor: '#f59e0b', yAxisID: 'voltage', stepped: true},
+      {label: t('requested_chart'), data: [], borderColor: '#f59e0b', yAxisID: 'duty', stepped: true},
+      {label: t('gpio_chart'), data: [], borderColor: '#34d399', yAxisID: 'gpio', stepped: true},
       {label: t('measured_chart'), data: [], borderColor: '#a78bfa', yAxisID: 'voltage', spanGaps: false}
     ]}, options: {responsive: true, maintainAspectRatio: false, animation: false,
       interaction: {mode: 'index', intersect: false}, elements: {point: {radius: 0}},
       scales: {temperature: {position: 'left', title: {display: true, text: '°C'}},
-        voltage: {position: 'right', min: 0, max: 3.6, title: {display: true, text: t('voltage_axis')}, grid: {drawOnChartArea: false}}}}
+        duty: {position: 'right', min: 0, max: 100, title: {display: true, text: t('voltage_axis')}, grid: {drawOnChartArea: false}},
+        gpio: {display: false, min: 0, max: 1}, voltage: {display: false, min: 0, max: 3.6}}}
   });
   function resetChart(since) {
     chartVersion += 1;
@@ -46,34 +48,53 @@
     chart.update();
   }
   function highlightTarget(state) {
+    const fresh = Boolean(state?.live && Date.now() - Date.parse(state.temperature_at) <= 10000);
+    const overheated = fresh && state.overheat;
+    const gap = state ? state.target_temperature - state.temperature : null;
+    const approaching = Boolean(fresh && state.active && !overheated &&
+      state.temperature !== null && gap > 0 && gap <= 1 && Number(target.value) === state.target_temperature);
     const reached = Boolean(state?.active && state.live && !state.overheat &&
       state.status === 'at_target' && state.temperature >= state.target_temperature &&
       Number(target.value) === state.target_temperature &&
       Date.now() - Date.parse(state.temperature_at) <= 10000);
     document.getElementById('manual-target-card').classList.toggle('is-target-reached', reached);
+    document.getElementById('manual-target-card').classList.toggle('is-target-approaching', approaching);
+    document.getElementById('manual-target-card').classList.toggle('is-overheated', Boolean(overheated));
     document.getElementById('manual-target-reached').classList.toggle('d-none', !reached);
+    document.getElementById('manual-target-approaching').classList.toggle('d-none', !approaching);
+    document.getElementById('manual-target-overheated').classList.toggle('d-none', !overheated);
   }
   function render(state) {
     latestState = state;
     highlightTarget(state);
     setText('live-temperature', state.temperature === null ? '— °C' : `${number(state.temperature)} °C`);
-    const trend = state.delta === null ? t('no_previous') : t('trend', {
-      change: `${state.delta > 0 ? '↑ +' : state.delta < 0 ? '↓ ' : '→ '}${number(state.delta)}`,
-      previous: number(state.previous_temperature)
-    });
-    setText('temperature-trend', trend);
+    const trend = state.delta > 0 ? 'rising' : state.delta < 0 ? 'falling' : 'steady';
+    document.getElementById('temperature-trend').className = `temperature-trend trend-${trend}`;
+    document.getElementById('temperature-trend-icon').className = `bi bi-arrow-${trend === 'rising' ? 'up-right' : trend === 'falling' ? 'down-right' : 'right'}`;
+    setText('temperature-change', state.delta === null ? '—' : `${state.delta > 0 ? '+' : ''}${number(state.delta)} °C`);
+    setText('temperature-previous', state.previous_temperature === null ? t('no_previous') : t('previous_reading', {temperature: number(state.previous_temperature)}));
+    const eta = state.eta_status === 'estimated' ? (state.eta_seconds < 60 ?
+      t('eta_seconds', {seconds: state.eta_seconds}) : t('eta_minutes', {minutes: Math.ceil(state.eta_seconds / 60)})) :
+      state.eta_status === 'collecting' ? t('eta_collecting', {intervals: state.estimate_intervals}) : t(`eta_${state.eta_status}`);
+    setText('heating-eta', eta);
+    setText('heating-rate', state.heating_rate_c_per_min === null ? t('eta_hint') : t('heating_rate', {rate: number(state.heating_rate_c_per_min)}));
+    setText('vessel-description', t('vessel_description', {name: state.vessel_name, volume: number(state.volume_liters, 1)}));
     setText('temperature-time', state.temperature_at ? `${t(state.live ? 'live' : 'stale_data')} · ${time(state.temperature_at)}` : t('waiting_sensor'));
-    setText('ssr-voltage', t('voltage', {voltage: number(state.signal_voltage)}));
-    setText('ssr-power', t('power', {power: number(state.power_percent, 1)}));
+    setText('ssr-voltage', t(state.ssr_on === null ? 'gpio_unknown' : state.ssr_on ? 'gpio_on' : 'gpio_off'));
+    setText('ssr-power', state.power_percent === null ? '—' : t('time_duty', {power: number(state.power_percent, 1)}));
+    setText('ssr-timing', state.on_time_ms === null ? '—' : t('time_window', {
+      window: number(state.reported_window_ms / 1000), on: number(state.on_time_ms / 1000),
+      off: number((state.reported_window_ms - state.on_time_ms) / 1000)
+    }));
     setText('manual-status', t(state.status));
     document.getElementById('manual-status').className = `badge rounded-pill text-bg-${state.overheat ? 'danger' : state.active ? 'success' : 'secondary'}`;
     setText('saved-target', t('saved_target', {target: number(state.target_temperature), threshold: number(state.warning_temperature)}));
     const warning = document.getElementById('manual-warning');
-    warning.classList.toggle('d-none', !state.overheat && state.status !== 'no_data');
-    setText('manual-warning', state.overheat ? t('overheat_warning', {temperature: number(state.temperature), target: number(state.target_temperature)}) : t('no_data_warning'));
+    warning.classList.toggle('d-none', !state.overheat && !state.reported_fault && state.status !== 'no_data');
+    setText('manual-warning', state.overheat ? t('overheat_warning', {temperature: number(state.temperature), target: number(state.target_temperature)}) : state.reported_fault ? t('pid_fault') : t('no_data_warning'));
     const reportFresh = state.reported_at && Date.now() - Date.parse(state.reported_at) <= 10000;
-    const confirmed = reportFresh && state.reported_output_mode === 'pwm' && state.reported_revision === state.revision && Math.abs(state.reported_power - state.power_percent) < .1;
-    setText('esp-report', confirmed ? t('esp_applied', {power: number(state.reported_power, 1), time: time(state.reported_at)}) : t('esp_waiting'));
+    const confirmed = state.output_confirmed;
+    setText('esp-report', confirmed ? t('esp_applied', {time: time(state.reported_at)}) : t('esp_waiting'));
     setText('ssr-measured', state.measured_voltage == null ? t('adc_missing') : `${t('adc_measured', {voltage: number(state.measured_voltage, 3)})}${reportFresh ? '' : ` · ${t('stale_measurement')}`}`);
     form.querySelector('[value="start"]').disabled = busy || state.active;
     stop.disabled = !state.active;
@@ -82,8 +103,9 @@
       chart.data.labels = history.map(point => time(point.at));
       chart.data.datasets[0].data = history.map(point => point.temperature);
       chart.data.datasets[1].data = history.map(point => point.target);
-      chart.data.datasets[2].data = history.map(point => point.voltage);
-      chart.data.datasets[3].data = history.map(point => point.measured_voltage);
+      chart.data.datasets[2].data = history.map(point => point.power_percent);
+      chart.data.datasets[3].data = history.map(point => point.ssr_on === null ? null : Number(point.ssr_on));
+      chart.data.datasets[4].data = history.map(point => point.measured_voltage);
       chart.update();
     }
   }

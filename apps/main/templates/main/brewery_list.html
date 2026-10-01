@@ -5,7 +5,9 @@
     {% translate "Breweries" %}
 {% endblock title %}
 {% block content %}
-    <h1 class="mb-4">{% translate "Breweries" %}</h1>
+    <div class="page-heading mb-4"><h1>{% translate "Breweries" %}</h1>
+        <a class="btn btn-outline-primary" href="{% url 'brewery-create' %}">{% translate 'Create brewery' %}</a>
+    </div>
     <div data-page-poller
          data-poll-interval="5000"
          data-poll-active="{% if has_active_session %}true{% else %}false{% endif %}"></div>
@@ -17,6 +19,8 @@
                     <div>
                         <h3>{{ brewery.name }}</h3>
                         <small>{{ brewery.slug }}</small>
+                        {% if brewery.location %}<div class="text-body-secondary small"><i class="bi bi-geo-alt"></i> {{ brewery.location }}</div>{% endif %}
+                        <a class="btn btn-sm btn-outline-light mt-2" href="{% url 'brewery-settings' brewery.id %}">{% translate 'Brewery settings' %}</a>
                     </div>
                     <button type="button"
                             class="btn btn-danger btn-sm"
@@ -100,6 +104,8 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <strong>{{ controller.name }}</strong>
+                                    {% if controller.vessel %}<div class="small">{{ controller.vessel.name }} · {{ controller.vessel.volume_liters }} {% translate 'L' %}</div>{% endif %}
+                                    <a class="small" href="{% url 'controller-settings' controller.id %}">{% translate 'Vessel settings' %}</a>
                                     <div class="text-muted">{{ controller.ip }}</div>
                                 </div>
                                 <div>

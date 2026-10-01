@@ -846,3 +846,147 @@ msgstr "Потрібне скінченне числове значення."
 
 msgid "Refresh"
 msgstr "Оновити"
+
+msgid "Brewery name"
+msgstr "Назва броварні"
+
+msgid "Location"
+msgstr "Локація"
+
+msgid "Controller name"
+msgstr "Назва контролера"
+
+msgid "Vessel name"
+msgstr "Назва ємності"
+
+msgid "Working volume (liters)"
+msgstr "Робочий об’єм (літри)"
+
+msgid "Brewery settings"
+msgstr "Налаштування броварні"
+
+msgid "Vessel settings"
+msgstr "Налаштування ємності"
+
+msgid "Create brewery"
+msgstr "Створити броварню"
+
+msgid "Save settings"
+msgstr "Зберегти налаштування"
+
+msgid "Brewery settings saved."
+msgstr "Налаштування броварні збережено."
+
+msgid "Vessel and controller settings saved."
+msgstr "Налаштування ємності та контролера збережено."
+
+msgid "Stop manual control before moving this controller."
+msgstr "Зупиніть ручне керування перед переміщенням контролера."
+
+msgid "Finish active brew sessions before moving this controller."
+msgstr "Завершіть активні сесії варіння перед переміщенням контролера."
+
+msgid "Brewery → vessels → controllers"
+msgstr "Броварня → ємності → контролери"
+
+msgid "A brewery groups multiple vessels. Each ESP controls one vessel with its own name and working volume. The default working volume is 20 liters."
+msgstr "Броварня об’єднує кілька ємностей. Кожна ESP керує однією ємністю з власною назвою та робочим об’ємом. Типовий робочий об’єм — 20 літрів."
+
+msgid "L"
+msgstr "л"
+
+msgid "Approaching target"
+msgstr "Наближаємося до цілі"
+
+msgid "Estimated time to target"
+msgstr "Приблизний час до цілі"
+
+msgid "Previous %(temperature)s °C"
+msgstr "Попередня %(temperature)s °C"
+
+msgid "≈ %(seconds)s sec"
+msgstr "≈ %(seconds)s с"
+
+msgid "≈ %(minutes)s min"
+msgstr "≈ %(minutes)s хв"
+
+msgid "Collecting readings: %(intervals)s / 5 intervals"
+msgstr "Збираємо показники: %(intervals)s / 5 інтервалів"
+
+msgid "Start heating to estimate time"
+msgstr "Запустіть нагрівання для прогнозу"
+
+msgid "Temperature is steady or falling"
+msgstr "Температура стабільна або знижується"
+
+msgid "Not enough stable warming to estimate"
+msgstr "Недостатньо стабільне нагрівання для прогнозу"
+
+msgid "Approximate forecast from recent readings"
+msgstr "Приблизний прогноз за останніми вимірами"
+
+msgid "Measured rate: %(rate)s °C/min · approximate"
+msgstr "Виміряна швидкість: %(rate)s °C/хв · приблизно"
+
+msgid "%(name)s · %(volume)s L working volume"
+msgstr "%(name)s · робочий об’єм %(volume)s л"
+
+msgid "PID · time PWM"
+msgstr "PID · часовий PWM"
+
+msgid "PID settings"
+msgstr "Налаштування PID"
+
+msgid "Control window (ms)"
+msgstr "Часове вікно (мс)"
+
+msgid "Initial gains require tuning for your vessel and heater. Percentages define ON time, not an analog voltage."
+msgstr "Початкові коефіцієнти потребують налаштування під вашу ємність і ТЕН. Відсотки визначають час ON, а не аналогову напругу."
+
+msgid "The ESP runs PID from DS18B20 readings. GPIO25 switches only LOW/HIGH (0/3.3 V) within a time window: 25% of 2 seconds means 0.5 seconds ON and 1.5 seconds OFF. PID may keep some ON time at the target to maintain temperature. Stop, overheat, or lost data switches the output OFF. The chart shows sampled GPIO states; it does not capture every switching edge."
+msgstr "ESP виконує PID за показниками DS18B20. GPIO25 перемикається лише LOW/HIGH (0/3,3 В) у часовому вікні: 25% від 2 секунд означає 0,5 с ON та 1,5 с OFF. На цілі PID може залишати частину часу ON для підтримання температури. Стоп, перегрів або втрата даних вимикають вихід. Графік показує вибіркові стани GPIO, а не всі фронти перемикання."
+
+msgid "PID ON time · %"
+msgstr "Час ON від PID · %"
+
+msgid "GPIO state · ON/OFF"
+msgstr "Стан GPIO · ON/OFF"
+
+msgid "ON time · %"
+msgstr "Час ON · %"
+
+msgid "ESP confirmed PID/time PWM · %(time)s"
+msgstr "ESP підтвердила PID/часовий PWM · %(time)s"
+
+msgid "Waiting for ESP to confirm PID/time PWM"
+msgstr "Очікуємо підтвердження PID/часового PWM від ESP"
+
+msgid "ON · 3.3 V"
+msgstr "ON · 3,3 В"
+
+msgid "OFF · 0 V"
+msgstr "OFF · 0 В"
+
+msgid "Waiting for GPIO state"
+msgstr "Очікуємо стан GPIO"
+
+msgid "%(power)s%% ON time"
+msgstr "%(power)s%% часу ON"
+
+msgid "Window %(window)s s · ON %(on)s s · OFF %(off)s s"
+msgstr "Вікно %(window)s с · ON %(on)s с · OFF %(off)s с"
+
+msgid "ESP stopped the output after a fault. Restart explicitly after checking the sensor and connection."
+msgstr "ESP зупинила вихід через помилку. Повторно запустіть режим після перевірки датчика та з’єднання."
+
+msgid "Time PWM telemetry requires the output state and window timing."
+msgstr "Телеметрія часового PWM потребує стану виходу та параметрів вікна."
+
+msgid "ON time cannot exceed the control window."
+msgstr "Час ON не може перевищувати часове вікно."
+
+msgid "Duty and ON time do not match."
+msgstr "Частка часу та тривалість ON не узгоджені."
+
+msgid "A disabled output must be OFF."
+msgstr "Вимкнений вихід має бути в стані OFF."

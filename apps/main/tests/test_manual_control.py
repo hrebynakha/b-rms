@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -25,13 +26,13 @@ class ManualControlTests(TestCase):
     def reading(self, value):
         return Telemetry.objects.create(sensor=self.sensor, value=value)
 
-    def test_power_decreases_and_turns_off_at_target(self):
+    def test_server_does_not_invent_pid_duty_or_gpio_state(self):
         self.control.active = True
         for temperature, power in [(30, 100), (40, 100), (45, 50), (49, 10), (50, 0), (55, 0)]:
             self.reading(temperature)
             state = control_state(self.control)
-            self.assertEqual(state["power_percent"], power)
-            self.assertAlmostEqual(state["signal_voltage"], power * 3.3 / 100)
+            self.assertIsNone(state["power_percent"])
+            self.assertIsNone(state["signal_voltage"])
 
     def test_overheat_latches_stop_and_requires_restart(self):
         self.control.active = True
@@ -43,7 +44,7 @@ class ManualControlTests(TestCase):
         self.assertTrue(control_state(self.control)["overheat"])
         self.assertEqual(self.client.post(self.action_url, {"action": "start"}).status_code, 409)
         self.reading(45)
-        self.assertEqual(control_state(self.control)["power_percent"], 0)
+        self.assertIsNone(control_state(self.control)["power_percent"])
         self.assertEqual(self.client.post(self.action_url, {"action": "start"}).status_code, 200)
 
     def test_stop_retains_temperature_and_warns_about_overshoot(self):
@@ -51,7 +52,7 @@ class ManualControlTests(TestCase):
         self.client.post(self.action_url, {"action": "start"})
         response = self.client.post(self.action_url, {"action": "stop", "target_temperature": "invalid"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["power_percent"], 0)
+        self.assertIsNone(response.json()["power_percent"])
         self.reading(62)
         state = self.client.get(self.status_url).json()
         self.assertFalse(state["active"])
@@ -66,7 +67,7 @@ class ManualControlTests(TestCase):
         self.assertTrue(control_state(self.control)["overheat"])
         self.assertEqual(control_state(self.control)["warning_temperature"], 55)
         Telemetry.objects.all().delete()
-        self.assertEqual(control_state(self.control)["power_percent"], 0)
+        self.assertIsNone(control_state(self.control)["power_percent"])
         self.assertEqual(self.client.post(self.action_url, {"action": "start"}).status_code, 409)
 
     def test_stale_data_stops_mode_and_blocks_start(self):
@@ -76,7 +77,7 @@ class ManualControlTests(TestCase):
         self.control.save()
         state = self.client.get(self.status_url).json()
         self.assertFalse(state["active"])
-        self.assertEqual(state["power_percent"], 0)
+        self.assertIsNone(state["power_percent"])
         self.assertFalse(state["live"])
         self.assertEqual(self.client.post(self.action_url, {"action": "start"}).status_code, 409)
 
@@ -93,23 +94,29 @@ class ManualControlTests(TestCase):
         self.reading(45)
         self.client.post(self.action_url, {"action": "start"})
         state = self.client.get(reverse("controller-commands"), {"mac_address": "esp-test"}).json()["manual_control"]
-        self.assertEqual(state["power_percent"], 50)
+        self.assertIsNone(state["power_percent"])
+        self.assertEqual(state["pid"], {"kp": 10, "ki": .1, "kd": 5})
+        self.assertEqual(state["window_ms"], 2000)
         self.assertFalse(state["simulation"])
-        self.assertEqual(state["output_mode"], "pwm")
+        self.assertEqual(state["output_mode"], "time_pwm")
         response = self.client.post(reverse("telemetry"), {
             "mac_address": "esp-test", "metrics": {"mash_temperature_sensor": 48},
             "manual_control": {"revision": state["revision"], "power_percent": 50,
-                               "output_mode": "pwm", "feedback_enabled": True, "measured_voltage": 1.62},
+                               "output_mode": "time_pwm", "feedback_enabled": True, "measured_voltage": 3.25,
+                               "ssr_on": True, "window_ms": 2000, "on_time_ms": 1000, "enabled": True},
         }, content_type="application/json")
         self.assertEqual(response.status_code, 200)
         state = self.client.get(self.status_url).json()
         self.assertEqual(state["reported_power"], 50)
-        self.assertEqual(state["power_percent"], 20)
+        self.assertEqual(state["power_percent"], 50)
         self.assertIsNotNone(state["reported_at"])
-        self.assertEqual(state["history"][-1]["voltage"], .66)
-        self.assertEqual(state["measured_voltage"], 1.62)
-        self.assertEqual(state["history"][-1]["measured_voltage"], 1.62)
-        self.assertEqual(state["reported_output_mode"], "pwm")
+        self.assertEqual(state["history"][-1]["voltage"], 3.3)
+        self.assertTrue(state["ssr_on"])
+        self.assertTrue(state["output_confirmed"])
+        self.assertEqual(state["on_time_ms"], 1000)
+        self.assertEqual(state["measured_voltage"], 3.25)
+        self.assertEqual(state["history"][-1]["measured_voltage"], 3.25)
+        self.assertEqual(state["reported_output_mode"], "time_pwm")
 
     def test_feedback_is_optional_and_finite(self):
         self.reading(45)
@@ -148,7 +155,10 @@ class ManualControlTests(TestCase):
         applied = self.client.post(self.action_url, {"action": "apply"}).json()
         self.assertIn("chart_since", applied)
         self.assertEqual(len(self.client.get(self.status_url).json()["history"]), 1)
-        response = self.client.get(self.status_url, {"reset_chart": "1"}).json()
+        # Windows can return identical clock timestamps for adjacent requests.
+        sample_time = self.control.samples.get().created_at
+        with patch("apps.main.manual_views.timezone.now", return_value=sample_time):
+            response = self.client.get(self.status_url, {"reset_chart": "1"}).json()
         self.assertIn("chart_since", response)
         self.assertEqual(response["history"], [])
         self.assertEqual(self.control.samples.count(), 1)
@@ -168,7 +178,34 @@ class ManualControlTests(TestCase):
         self.client.post(reverse("controller-reset", args=[self.controller.pk]))
         state = self.client.get(self.status_url).json()
         self.assertFalse(state["active"])
-        self.assertEqual(state["power_percent"], 0)
+        self.assertIsNone(state["power_percent"])
+
+    def test_pid_settings_validation_and_fault_stop(self):
+        self.reading(45)
+        for field, value in [("pid_kp", 101), ("pid_ki", 11), ("pid_kd", "NaN"), ("window_ms", 999)]:
+            response = self.client.post(self.action_url, {"action": "apply", field: value})
+            self.assertEqual(response.status_code, 400)
+        response = self.client.post(self.action_url, {"action": "start", "pid_kp": 8, "pid_ki": .2, "pid_kd": 2, "window_ms": 4000})
+        state = response.json()
+        self.assertEqual(state["pid"], {"kp": 8, "ki": .2, "kd": 2})
+        self.assertEqual(state["window_ms"], 4000)
+        response = self.client.post(reverse("telemetry"), {
+            "mac_address": "esp-test", "metrics": {"mash_temperature_sensor": 46},
+            "manual_control": {"revision": state["revision"], "power_percent": 0, "output_mode": "time_pwm",
+                               "ssr_on": False, "window_ms": 4000, "on_time_ms": 0, "enabled": False, "fault": True},
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.control.refresh_from_db()
+        self.assertFalse(self.control.active)
+        self.assertEqual(self.control.revision, state["revision"] + 1)
+
+    def test_inconsistent_time_pwm_report_is_rejected(self):
+        report = {"revision": 0, "power_percent": 25, "output_mode": "time_pwm",
+                  "ssr_on": False, "window_ms": 2000, "on_time_ms": 500, "enabled": True}
+        for changes in [{"on_time_ms": 2500}, {"on_time_ms": 1000}, {"enabled": False}, {"window_ms": 0}]:
+            response = self.client.post(reverse("telemetry"), {"mac_address": "esp-test", "metrics": {},
+                "manual_control": {**report, **changes}}, content_type="application/json")
+            self.assertEqual(response.status_code, 400)
 
     def test_manual_and_recipe_modes_are_exclusive(self):
         self.reading(40)

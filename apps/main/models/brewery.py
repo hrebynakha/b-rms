@@ -7,6 +7,7 @@ class Brewery(models.Model):
     slug = models.SlugField(unique=True, blank=True)
 
     description = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True)
 
     is_enabled = models.BooleanField(default=True)
 
@@ -19,5 +20,10 @@ class Brewery(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base = (slugify(self.name) or "brewery")[:40]
+            self.slug = base
+            suffix = 2
+            while Brewery.objects.exclude(pk=self.pk).filter(slug=self.slug).exists():
+                self.slug = f"{base[:40]}-{suffix}"
+                suffix += 1
         super().save(*args, **kwargs)

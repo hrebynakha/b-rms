@@ -4,6 +4,7 @@ from .sensor import Sensor
 from .recipe import Recipe, RecipeStep
 from .session import BrewSession
 from .telemetry import Telemetry
+from .vessel import Vessel
 from .manual_control import ManualControl, ManualControlSample
 
 __all__ = [
@@ -14,4 +15,7 @@ __all__ = [
     "RecipeStep",
     "BrewSession",
     "Telemetry",
+    "Vessel",
+    "ManualControl",
+    "ManualControlSample",
 ]

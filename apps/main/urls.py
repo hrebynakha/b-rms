@@ -1,4 +1,5 @@
 from django.urls import path
+from apps.main.settings_views import brewery_settings_view, controller_settings_view
 from apps.main.manual_views import manual_control_view, manual_status_view, manual_action_view
 from apps.main.views import (
     brewery_list_view,
@@ -17,6 +18,9 @@ from apps.main.views import (
 )
 
 urlpatterns = [
+    path("breweries/create/", brewery_settings_view, name="brewery-create"),
+    path("breweries/<int:brewery_id>/settings/", brewery_settings_view, name="brewery-settings"),
+    path("controllers/<int:controller_id>/settings/", controller_settings_view, name="controller-settings"),
     path("controllers/<int:controller_id>/manual/", manual_control_view, name="manual-control"),
     path("controllers/<int:controller_id>/manual/status/", manual_status_view, name="manual-status"),
     path("controllers/<int:controller_id>/manual/action/", manual_action_view, name="manual-action"),

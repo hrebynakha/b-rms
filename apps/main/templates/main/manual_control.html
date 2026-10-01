@@ -5,7 +5,10 @@
 <div id="manual-panel" class="page-shell" data-status-url="{% url 'manual-status' controller.id %}" data-action-url="{% url 'manual-action' controller.id %}">
     <a href="{% url 'brewery-list' %}" class="back-link"><i class="bi bi-arrow-left"></i> {% translate 'Controllers' %}</a>
     <div class="page-heading mt-3 mb-4">
-        <div><span class="eyebrow">{% translate 'Temperature control panel' %}</span><h1>{{ controller.name }}</h1><span class="badge text-bg-info">{% translate 'Live PWM output' %}</span></div>
+        <div><span class="eyebrow">{% translate 'Temperature control panel' %}</span><h1>{{ controller.name }}</h1><span class="badge text-bg-info">{% translate 'PID · time PWM' %}</span>
+            <a href="{% url 'controller-settings' controller.id %}" class="small ms-2">{% translate 'Vessel settings' %}</a>
+            <div id="vessel-description" class="text-body-secondary small mt-2"></div>
+        </div>
         <button class="btn btn-danger btn-lg" type="button" id="manual-stop" {% if not control.active %}disabled{% endif %}><i class="bi bi-stop-fill"></i> {% translate 'Stop' %}</button>
     </div>
     <div id="manual-error" class="alert alert-danger d-none" role="alert"></div>
@@ -14,11 +17,18 @@
         <div class="col-lg-5">
             <div id="manual-target-card" class="card app-card manual-target-card h-100"><div class="card-body p-4">
                 <h5>{% translate 'Target temperature' %}</h5>
+                <div id="manual-target-approaching" class="manual-target-approaching d-none" role="status" aria-live="polite">
+                    <i class="bi bi-bullseye" aria-hidden="true"></i> {% translate 'Approaching target' %}
+                </div>
                 <div id="manual-target-reached" class="manual-target-reached d-none" role="status" aria-live="polite">
                     <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                     {% translate 'Target reached' %}
                 </div>
                 <form id="manual-form">
+                    <div id="manual-target-overheated" class="manual-target-overheated d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                        {% translate 'Overheat' %}
+                    </div>
                     {% csrf_token %}
                     <div class="manual-dial my-4">
                         <button type="button" class="btn manual-step-button" id="target-minus" aria-label="{% translate 'Decrease temperature' %}"><i class="bi bi-dash-lg"></i></button>
@@ -35,6 +45,16 @@
                             <option value="percent" {% if control.warning_mode == 'percent' %}selected{% endif %}>{% translate '% of target' %}</option>
                         </select>
                     </div>
+                    <details class="mb-3">
+                        <summary class="text-body-secondary">{% translate 'PID settings' %}</summary>
+                        <div class="row g-2 mt-1">
+                            <div class="col-4"><label class="form-label" for="pid-kp">Kp</label><input id="pid-kp" name="pid_kp" type="number" min="0" max="100" step="0.01" value="{{ control.pid_kp|unlocalize }}" class="form-control" required></div>
+                            <div class="col-4"><label class="form-label" for="pid-ki">Ki</label><input id="pid-ki" name="pid_ki" type="number" min="0" max="10" step="0.01" value="{{ control.pid_ki|unlocalize }}" class="form-control" required></div>
+                            <div class="col-4"><label class="form-label" for="pid-kd">Kd</label><input id="pid-kd" name="pid_kd" type="number" min="0" max="1000" step="0.01" value="{{ control.pid_kd|unlocalize }}" class="form-control" required></div>
+                            <div class="col-12"><label class="form-label" for="pid-window">{% translate 'Control window (ms)' %}</label><input id="pid-window" name="window_ms" type="number" min="1000" max="10000" step="100" value="{{ control.window_ms }}" class="form-control" required></div>
+                        </div>
+                        <small class="text-body-secondary d-block mt-2">{% translate 'Initial gains require tuning for your vessel and heater. Percentages define ON time, not an analog voltage.' %}</small>
+                    </details>
                     <div class="d-flex gap-2"><button type="submit" name="action" value="start" class="btn btn-primary flex-fill">{% translate 'Start' %}</button><button type="submit" name="action" value="apply" class="btn btn-outline-primary flex-fill">{% translate 'Apply' %}</button></div>
                     <small id="saved-target" class="text-body-secondary d-block mt-3"></small>
                 </form>
@@ -44,11 +64,23 @@
             <div class="row g-3 mb-3">
                 <div class="col-sm-6"><div class="card app-card"><div class="card-body p-4">
                     <span class="eyebrow">{% translate 'Sensor temperature' %}</span><div id="live-temperature" class="manual-reading">— °C</div>
-                    <div id="temperature-trend" class="text-body-secondary"></div><small id="temperature-time" class="text-body-secondary"></small>
+                    <div class="temperature-trend-row">
+                        <span id="temperature-trend" class="temperature-trend trend-steady">
+                            <i id="temperature-trend-icon" class="bi bi-arrow-right" aria-hidden="true"></i>
+                            <span id="temperature-change">—</span>
+                        </span>
+                        <small id="temperature-previous" class="text-body-secondary"></small>
+                    </div>
+                    <small id="temperature-time" class="text-body-secondary"></small>
+                    <div class="heating-estimate mt-3 pt-3 border-top">
+                        <span class="text-body-secondary small"><i class="bi bi-clock-history"></i> {% translate 'Estimated time to target' %}</span>
+                        <div id="heating-eta" class="fw-semibold mt-1">—</div>
+                        <small id="heating-rate" class="text-body-secondary"></small>
+                    </div>
                 </div></div></div>
                 <div class="col-sm-6"><div class="card app-card"><div class="card-body p-4">
-                    <span class="eyebrow">{% translate 'SSR output · GPIO25' %}</span><div id="ssr-voltage" class="manual-reading">{% translate '0 V' %}</div>
-                    <div id="ssr-power">{% translate '0% power' %}</div><small class="text-body-secondary">{% translate 'Calculated mean PWM voltage' %}</small>
+                    <span class="eyebrow">{% translate 'SSR output · GPIO25' %}</span><div id="ssr-voltage" class="manual-reading">—</div>
+                    <div id="ssr-power">—</div><small id="ssr-timing" class="text-body-secondary"></small>
                     <div id="ssr-measured" class="mt-2 fw-semibold">{% translate 'ADC: no measurement' %}</div>
                 </div></div></div>
             </div>
@@ -67,7 +99,7 @@
             </div></div>
         </div>
     </div>
-    <p class="text-body-secondary small mt-4">{% translate 'GPIO25 outputs 1 kHz PWM: 0/3.3 V pulses with a variable duty cycle. Connect the multimeter between GPIO25 and GND. To chart measured voltage, wire the divider GPIO25 → 10 kΩ → GPIO35 → 10 kΩ → GND and enable ADC in the firmware. Stop takes effect when the board receives the command. The board switches the output off independently if commands or sensor readings are lost.' %}</p>
+    <p class="text-body-secondary small mt-4">{% translate 'The ESP runs PID from DS18B20 readings. GPIO25 switches only LOW/HIGH (0/3.3 V) within a time window: 25% of 2 seconds means 0.5 seconds ON and 1.5 seconds OFF. PID may keep some ON time at the target to maintain temperature. Stop, overheat, or lost data switches the output OFF. The chart shows sampled GPIO states; it does not capture every switching edge.' %}</p>
 </div>
 {% endblock %}
 {% block extra_js %}{{ manual_messages|json_script:"manual-messages" }}<script src="{% static 'js/manual-control.js' %}"></script>{% endblock %}

@@ -8,7 +8,7 @@
 #include "wifi_manager.h"
 
 namespace {
-constexpr char FIRMWARE_VERSION[] = "0.3.0";
+constexpr char FIRMWARE_VERSION[] = "0.4.1";
 constexpr uint32_t HTTP_TIMEOUT_MS = 5000;
 
 String makeDeviceId() {
@@ -75,7 +75,7 @@ bool sendInit() {
     return success;
 }
 
-bool pollWiFiSetupCommand() {
+bool pollControllerCommands() {
     if (!isWiFiConnected()) return false;
     static String pendingCommandId;
     if (!pendingCommandId.isEmpty()) {
@@ -98,12 +98,13 @@ bool pollWiFiSetupCommand() {
     JsonDocument document;
     if (deserializeJson(document, response)) return false;
     JsonObject manual = document["manual_control"].as<JsonObject>();
-    if (!manual.isNull() && manual["output_mode"] == "pwm") {
-        const float requestedPower = manual["power_percent"] | 0.0f;
+    if (!manual.isNull() && manual["output_mode"] == "time_pwm") {
         const uint32_t revision = manual["revision"] | 0U;
         const float target = manual["target_temperature"] | 0.0f;
-        setHeaterCommand(manual["active"] == true, target, requestedPower, revision);
-        Serial.printf("SSR PWM request: %.1f%% (revision %u)\n", requestedPower, revision);
+        JsonObject gains = manual["pid"].as<JsonObject>();
+        setHeaterCommand(manual["active"] == true, target, manual["warning_temperature"] | 0.0f,
+                         gains["kp"] | NAN, gains["ki"] | NAN, gains["kd"] | NAN,
+                         manual["window_ms"] | 0U, revision);
     } else {
         stopHeaterOutput();
     }
@@ -133,7 +134,12 @@ String buildPayload() {
     const HeaterOutputReport report = getHeaterOutputReport();
     manual["revision"] = report.revision;
     manual["power_percent"] = report.powerPercent;
-    manual["output_mode"] = "pwm";
+    manual["output_mode"] = "time_pwm";
+    manual["ssr_on"] = report.ssrOn;
+    manual["window_ms"] = report.windowMs;
+    manual["on_time_ms"] = report.onTimeMs;
+    manual["enabled"] = report.enabled;
+    manual["fault"] = report.fault;
     manual["feedback_enabled"] = report.feedbackEnabled;
     if (report.feedbackEnabled && isfinite(report.measuredVoltage)) {
         manual["measured_voltage"] = report.measuredVoltage;

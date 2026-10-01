@@ -384,7 +384,7 @@ def _current_temperature(session, now):
             sensor__is_enabled=True,
             sensor__controller__is_enabled=True,
         )
-        .order_by("-created_at")
+        .order_by("-created_at", "-pk")
         .first()
     )
     if not latest:

@@ -19,9 +19,13 @@ class ManualSettingsSerializer(serializers.Serializer):
     target_temperature = serializers.FloatField(min_value=30, max_value=100, required=False)
     warning_delta = serializers.FloatField(min_value=1, max_value=50, required=False)
     warning_mode = serializers.ChoiceField(choices=["degrees", "percent"], required=False)
+    pid_kp = serializers.FloatField(min_value=0, max_value=100, required=False)
+    pid_ki = serializers.FloatField(min_value=0, max_value=10, required=False)
+    pid_kd = serializers.FloatField(min_value=0, max_value=1000, required=False)
+    window_ms = serializers.IntegerField(min_value=1000, max_value=10000, required=False)
 
     def validate(self, attrs):
-        if any(not math.isfinite(attrs[key]) for key in ("target_temperature", "warning_delta") if key in attrs):
+        if any(not math.isfinite(attrs[key]) for key in ("target_temperature", "warning_delta", "pid_kp", "pid_ki", "pid_kd") if key in attrs):
             raise serializers.ValidationError(_("Values must be finite numbers."))
         if any(attrs[key] % 1 for key in ("target_temperature", "warning_delta") if key in attrs):
             raise serializers.ValidationError(_("Target temperature and warning threshold must be whole numbers."))
@@ -46,11 +50,13 @@ def manual_status_view(request, controller_id):
     chart_since = timezone.now() if request.GET.get("reset_chart") == "1" else None
     samples = control.samples.order_by("-pk")
     if chart_since:
-        samples = samples.filter(created_at__gte=chart_since)
+        samples = samples.filter(created_at__gt=chart_since)
         state["chart_since"] = chart_since.isoformat()
     state["history"] = [
         {"at": sample.created_at.isoformat(), "temperature": sample.temperature,
          "target": sample.target_temperature, "voltage": sample.signal_voltage,
+         "power_percent": sample.power_percent if sample.output_mode == "time_pwm" else None,
+         "ssr_on": sample.ssr_on,
          "measured_voltage": sample.measured_voltage}
         for sample in reversed(list(samples[:200]))
     ]
@@ -93,6 +99,7 @@ def manual_action_view(request, controller_id):
                 return JsonResponse({"detail": _("Finish the active brew session first.")}, status=409)
         if action == "start":
             control.active = True
+        control.estimate_started_at = timezone.now()
     else:
         control.active = False
     control.revision += 1

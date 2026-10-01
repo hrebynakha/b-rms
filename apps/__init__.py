@@ -1,0 +1,1 @@
+"""B-RMS Django applications."""

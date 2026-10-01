@@ -70,6 +70,14 @@ class SessionEngineTests(TestCase):
             value=50.0,
         )
 
+    def test_latest_temperature_wins_when_timestamps_match(self):
+        newest = Telemetry.objects.create(sensor=self.temperature_sensor, value=40)
+        Telemetry.objects.filter(pk=newest.pk).update(created_at=self.telemetry.created_at)
+        _, progress = start_session(self.session.pk)
+        self.assertEqual(progress.current_temperature, 40)
+        self.assertEqual(self.session.recipe.steps.first().target_temperature, 50)
+        self.assertIsNone(BrewSession.objects.get(pk=self.session.pk).step_started_at)
+
     def test_start_session_initializes_demo_cycle(self):
         now = timezone.now()
 

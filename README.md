@@ -213,6 +213,7 @@ python scripts/compile_translations.py
 ```
 
 Restart the Django server after recompiling to reload cached translations.
+Run the complete backend test suite with `python manage.py test`.
 English source strings use Django `translate`/`gettext`; the Ukrainian catalog
 also supplies dynamic chart labels, statuses, and errors. Generated `.mo` files
 are ignored by Git and must be compiled on each installation.
@@ -312,23 +313,58 @@ After saving, the device automatically reboots and connects to the brewery platf
 
 ## ▶ Build Firmware
 
-### Manual temperature control (real PWM output)
+### Manual temperature control (PID and time-proportional SSR output)
+
+Equipment is grouped as **brewery → vessels**, with **one ESP controller per vessel**.
+Use **Create brewery** / **Brewery settings** to edit the brewery name, location,
+and description. **Vessel settings** edits the vessel name, working volume (20 L
+by default), controller name, and brewery assignment. Existing controller identities
+and telemetry remain intact. Multiple ESP controllers can belong to the same brewery;
+each has independent manual controls. Moving a controller is blocked during active
+manual control or an active brew session in either brewery.
+
+The manual panel pulses blue within 1 °C below the target, green at the target,
+and red at the overshoot threshold. Temperature changes use green/red/blue trend
+badges. After at least five fresh intervals, estimated time uses a linear fit of
+the last six to eleven readings and their actual timestamps. Cooling, flat readings,
+stale data, and long gaps suppress the forecast. Start/apply resets the estimation
+window. This is an approximate extrapolation of measured temperature, not a heater
+power or water-volume model; working volume is saved for later physical calculations.
+Recipe brew sessions still operate at brewery scope.
 
 Open **Ручне керування** on a controller card. Set a target between 30 and 100 °C,
 choose an overshoot threshold in °C or percent of the target, and press **Запустити**.
 **Застосувати** saves adjustments; **Стоп** immediately sets the requested power to zero.
 The ESP receives the updated request at its next command poll (every three seconds).
 
-The live panel shows the latest and previous sensor temperatures, their difference,
-requested power, calculated mean PWM voltage, optional measured ADC voltage, and history.
-Control uses `power_percent = clamp((target - temperature) * 10, 0, 100)`:
-at a 50 °C target, 45 °C requests 50% / 1.65 V and 50 °C requests zero.
-ESP32 now drives **GPIO25** with real **1 kHz, 10-bit PWM**. The pin switches
-between LOW and approximately 3.3 V; a DC multimeter shows its average (approximately
-1.65 V at 50% duty). Connect the meter positive lead to GPIO25 and negative to GND.
-This is PWM, not a DAC producing constant analog voltage. The exact voltage depends
-on the board supply and meter. GPIO4 remains the temperature sensor; GPIO34 remains
-the existing input-voltage sensor.
+The control chain is **DS18B20 → local PID → 0–100% → time PWM → GPIO25
+LOW/HIGH (0/~3.3 V) → SSR → heater OFF/ON**. The percentage determines the
+fraction of time ON, rather than an analog control voltage. With the default
+2,000 ms window, 25% means 500 ms ON and 1,500 ms OFF. GPIO4 remains the
+temperature sensor; GPIO34 remains the existing input-voltage sensor.
+
+PID runs on the ESP using fresh sensor readings and their elapsed time, with
+derivative on measurement and integral anti-windup. The panel exposes Kp, Ki,
+Kd and a window from 1,000 to 10,000 ms. Defaults are Kp=10, Ki=0.1, Kd=5;
+these are initial values and require tuning for the actual vessel and heater.
+Kp uses %/°C, Ki uses %/(°C·s), and Kd uses %·s/°C. Reaching the target can
+leave a nonzero duty to maintain temperature. Start/apply resets PID state.
+
+The live panel shows temperature, actual reported ON percentage, GPIO ON/OFF,
+window timing, optional ADC voltage, and history. Missing reports remain empty.
+The chart starts on Apply/Start; Refresh keeps only subsequent data. GPIO points
+are telemetry snapshots every three seconds, so the chart cannot show every
+edge of a two-second window. Connect a multimeter between GPIO25 and GND to
+observe the low-voltage output; its display may average switching depending on
+the meter. GPIO state reports confirm the programmed output, not SSR operation
+or the voltage at the heater.
+
+DS18B20 uses GPIO4. Serial logs show the discovered device count and ROM address;
+failed reads invalidate the cached address and trigger discovery on the next
+cycle, allowing recovery after reconnecting the sensor. Each reading waits once
+for a 12-bit conversion. The SSR task runs on the other ESP32 core to avoid
+preempting timing-sensitive OneWire reset pulses. Invalid readings still shut
+down heating; recovery does not automatically rearm a latched heater fault.
 
 To measure the actual output, wire a separate ADC1 feedback divider:
 
@@ -340,24 +376,26 @@ GPIO25 ── 10 kΩ ──┬── 10 kΩ ── GND
 
 Then change `SSR_FEEDBACK_ENABLED=0` to `SSR_FEEDBACK_ENABLED=1` in `platformio.ini`
 and rebuild/upload. Leave it disabled until the divider is wired; a floating ADC
-does not provide a useful measurement. ESP averages calibrated ADC samples and
-reports `measured_voltage` (multiplied by two for the divider) in telemetry.
-The purple chart line shows measured voltage; the orange line shows the requested
-mean voltage. Missing measurements stay empty rather than being inferred from PWM.
+does not provide a useful measurement. ESP samples the calibrated ADC every
+250 ms and reports the latest instantaneous `measured_voltage` (multiplied by
+two for the divider), without averaging across the PWM window.
+The chart shows ON percentage, sampled GPIO state, and optional measured voltage.
+Missing measurements stay empty rather than being inferred from duty.
 ADC accuracy is limited; compare it with your meter. The ADC is for the low-voltage
 control signal only, never the mains/SSR load terminals.
 
-The PWM output starts LOW. A separate FreeRTOS task keeps the output timeout working
+The output starts LOW. A separate FreeRTOS task switches the pin every 20 ms and keeps the output timeout working
 while HTTP calls or sensor conversions block the main loop. Invalid/missing sensor
 data, ten seconds without fresh commands or readings, Wi-Fi loss, setup mode, and
-stop commands disable output. ESP reports the actual programmed PWM duty and command
+stop commands disable output. The local overheat threshold also disables the pin.
+A fault is latched until an explicit new command revision arrives.
+ESP reports the actual programmed window duty, ON/OFF state, timing, fault and command
 revision separately from measured voltage. Stop requests reach the board on the next
 successful poll; the UI waits for ESP confirmation rather than claiming immediate
 physical shutdown. No connected heater or SSR is required for this bench test.
 
-Before attaching a real SSR, select its required drive circuit and switching mode
-from its datasheet. A 1 kHz bench PWM signal is not a universal AC/zero-cross SSR
-control mode; those commonly require time-proportional control. Add a 10 kΩ pull-down
+Before attaching a real SSR, verify its input can be driven by the board's 3.3 V
+output and choose the required drive circuit from its datasheet. Add a 10 kΩ pull-down
 from GPIO25 to GND if the external driver must remain LOW during reset/boot before
 firmware initializes the pin.
 
@@ -366,7 +404,10 @@ warns at 60 °C; a 10% threshold warns at 55 °C. Overheat, missing telemetry fo
 more than ten seconds, disabled controllers, and Wi-Fi reset stop the mode.
 Restart explicitly after fresh readings return and the temperature is below the
 warning threshold. Manual mode and an active brew session cannot run together.
-Apply migrations and upload the updated firmware before testing.
+Apply migrations and upload the updated firmware before testing. The protocol now
+uses `output_mode: "time_pwm"` and sends PID parameters to the board, not a duty
+calculated by the server. Migration 0014 pauses existing manual controls during
+the upgrade; start again explicitly after updating the firmware.
 
 The dashboard's **Reset Wi-Fi** button opens a confirmation modal. After confirmation,
 the command remains queued until the ESP32 reads it from `GET /api/v1/commands/?mac_address=...`

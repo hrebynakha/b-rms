@@ -1,8 +1,7 @@
 #include <WiFi.h>
 #include <math.h>
-
 #include "heater_output.h"
-
+#include "pid_control.h"
 #ifndef SSR_OUTPUT_PIN
 #define SSR_OUTPUT_PIN 25
 #endif
@@ -14,24 +13,27 @@
 #endif
 
 namespace {
-constexpr int PWM_CHANNEL = 0;
-constexpr int PWM_FREQUENCY = 1000;
-constexpr int PWM_BITS = 10;
-constexpr int PWM_MAX = (1 << PWM_BITS) - 1;
 constexpr uint32_t MAX_AGE_MS = 10000;
-// Two equal 10 kOhm resistors divide output voltage by two before ADC1.
-constexpr float FEEDBACK_DIVIDER_RATIO = 2.0f;
 portMUX_TYPE outputMux = portMUX_INITIALIZER_UNLOCKED;
-bool enabled = false;
-bool sensorValid = false;
-float sensorTemperature = NAN;
-float targetTemperature = 0;
-float requestedPower = 0;
-uint32_t commandAt = 0;
-uint32_t sensorAt = 0;
-uint32_t revision = 0;
-float appliedPower = 0;
-float measuredVoltage = NAN;
+HeatingPid pid;
+bool enabled = false, sensorValid = false, faultLatched = false;
+bool outputOn = false, resetPending = true, taskReady = false;
+float sensorTemperature = NAN, targetTemperature = 50, overheatTemperature = 60;
+float kp = 10, ki = .1f, kd = 5;
+uint32_t commandAt = 0, sensorAt = 0, revision = 0, faultRevision = 0;
+uint32_t sensorSequence = 0, consumedSequence = 0;
+uint32_t windowMs = 2000, windowAt = 0, onTimeMs = 0;
+float windowPower = 0, measuredVoltage = NAN;
+
+void off() {
+    enabled = false;
+    outputOn = false;
+    windowPower = 0;
+    onTimeMs = 0;
+    resetPending = true;
+    digitalWrite(SSR_OUTPUT_PIN, LOW);
+}
+void trip() { faultLatched = true; faultRevision = revision; off(); }
 
 void outputTask(void *) {
     uint32_t lastFeedbackAt = 0;
@@ -39,22 +41,31 @@ void outputTask(void *) {
         const uint32_t now = millis();
         const bool connected = WiFi.status() == WL_CONNECTED;
         portENTER_CRITICAL(&outputMux);
-        if (!connected || !sensorValid || now - commandAt >= MAX_AGE_MS ||
-            now - sensorAt >= MAX_AGE_MS) enabled = false;
-        const float power = enabled && sensorTemperature < targetTemperature ? requestedPower : 0;
-        const uint32_t duty = lroundf(power * PWM_MAX / 100.0f);
-        ledcWrite(PWM_CHANNEL, duty);
-        appliedPower = duty * 100.0f / PWM_MAX;
+        if (enabled && (!connected || !sensorValid || now - commandAt >= MAX_AGE_MS ||
+                        now - sensorAt >= MAX_AGE_MS || sensorTemperature >= overheatTemperature)) trip();
+        if (enabled) {
+            const bool reset = resetPending;
+            if (reset) { pid.reset(); windowAt = now; resetPending = false; }
+            if (reset || sensorSequence != consumedSequence) {
+                pid.update(targetTemperature, sensorTemperature, sensorAt, kp, ki, kd);
+                consumedSequence = sensorSequence;
+            }
+            const uint32_t elapsed = now - windowAt;
+            if (reset || elapsed >= windowMs) {
+                if (!reset) windowAt += (elapsed / windowMs) * windowMs;
+                // Freeze duty for this window; apply new PID results at its boundary.
+                windowPower = pid.value();
+                onTimeMs = lroundf(windowPower * windowMs / 100.0f);
+            }
+            if (pid.value() <= 0) { windowPower = 0; onTimeMs = 0; }
+            outputOn = (now - windowAt) < onTimeMs;
+            digitalWrite(SSR_OUTPUT_PIN, outputOn ? HIGH : LOW);
+        }
         portEXIT_CRITICAL(&outputMux);
         if (SSR_FEEDBACK_ENABLED && now - lastFeedbackAt >= 250) {
             lastFeedbackAt = now;
-            uint32_t sumMillivolts = 0;
-            // Average across many PWM periods; vary spacing to avoid phase locking.
-            for (int i = 0; i < 128; ++i) {
-                sumMillivolts += analogReadMilliVolts(SSR_FEEDBACK_PIN);
-                delayMicroseconds(137 + (i * 29) % 113);
-            }
-            const float voltage = sumMillivolts / 128000.0f * FEEDBACK_DIVIDER_RATIO;
+            // Instantaneous control level: no averaging across the time-PWM window.
+            const float voltage = analogReadMilliVolts(SSR_FEEDBACK_PIN) / 1000.0f * 2.0f;
             portENTER_CRITICAL(&outputMux);
             measuredVoltage = voltage;
             portEXIT_CRITICAL(&outputMux);
@@ -62,35 +73,31 @@ void outputTask(void *) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
-}  // namespace
+}
 
 void beginHeaterOutput() {
     pinMode(SSR_OUTPUT_PIN, OUTPUT);
     digitalWrite(SSR_OUTPUT_PIN, LOW);
-    if (!ledcSetup(PWM_CHANNEL, PWM_FREQUENCY, PWM_BITS)) {
-        Serial.println("SSR PWM initialization failed; output remains LOW.");
-        return;
-    }
-    ledcAttachPin(SSR_OUTPUT_PIN, PWM_CHANNEL);
-    ledcWrite(PWM_CHANNEL, 0);
     if (SSR_FEEDBACK_ENABLED) {
         pinMode(SSR_FEEDBACK_PIN, INPUT);
         analogSetPinAttenuation(SSR_FEEDBACK_PIN, ADC_11db);
     }
-    if (xTaskCreate(outputTask, "heater-output", 4096, nullptr, 2, nullptr) != pdPASS) {
-        Serial.println("SSR output task failed; output remains LOW.");
-        ledcWrite(PWM_CHANNEL, 0);
-    }
-    Serial.printf("SSR PWM: GPIO%d, %d Hz; ADC feedback: %s (GPIO%d).\n",
-                  SSR_OUTPUT_PIN, PWM_FREQUENCY, SSR_FEEDBACK_ENABLED ? "enabled" : "disabled", SSR_FEEDBACK_PIN);
+    // OneWire reset pulses contain timing-sensitive intervals outside its bit-level
+    // critical sections. Keep this periodic higher-priority task off the loop core.
+#if CONFIG_FREERTOS_UNICORE
+    taskReady = xTaskCreate(outputTask, "heater-output", 4096, nullptr, 1, nullptr) == pdPASS;
+#else
+    taskReady = xTaskCreatePinnedToCore(outputTask, "heater-output", 4096, nullptr, 2,
+                                      nullptr, ARDUINO_RUNNING_CORE == 1 ? 0 : 1) == pdPASS;
+#endif
+    if (!taskReady) Serial.println("SSR task failed; output remains LOW.");
+    Serial.printf("PID time PWM: GPIO%d, default window %u ms; ADC GPIO%d: %s.\n",
+                  SSR_OUTPUT_PIN, windowMs, SSR_FEEDBACK_PIN, SSR_FEEDBACK_ENABLED ? "enabled" : "disabled");
 }
 
 void stopHeaterOutput() {
     portENTER_CRITICAL(&outputMux);
-    enabled = false;
-    requestedPower = 0;
-    appliedPower = 0;
-    ledcWrite(PWM_CHANNEL, 0);
+    off();
     portEXIT_CRITICAL(&outputMux);
 }
 
@@ -99,32 +106,40 @@ void updateHeaterTemperature(bool valid, float temperature) {
     sensorValid = valid && isfinite(temperature) && temperature >= -55 && temperature <= 125;
     sensorTemperature = temperature;
     sensorAt = millis();
-    if (!sensorValid) {
-        enabled = false;
-        appliedPower = 0;
-        ledcWrite(PWM_CHANNEL, 0);
-    }
+    sensorSequence++;
+    if (enabled && (!sensorValid || temperature >= overheatTemperature)) trip();
     portEXIT_CRITICAL(&outputMux);
 }
 
-void setHeaterCommand(bool active, float target, float power, uint32_t commandRevision) {
+void setHeaterCommand(bool active, float target, float overheat, float newKp, float newKi,
+                      float newKd, uint32_t newWindowMs, uint32_t commandRevision) {
     portENTER_CRITICAL(&outputMux);
+    const bool changed = revision != commandRevision || target != targetTemperature ||
+        newKp != kp || newKi != ki || newKd != kd || newWindowMs != windowMs || overheat != overheatTemperature;
     revision = commandRevision;
-    targetTemperature = target;
     commandAt = millis();
-    enabled = active && isfinite(target) && target >= 30 && target <= 100 &&
-              isfinite(power) && power >= 0 && power <= 100 && sensorValid;
-    requestedPower = enabled ? power : 0;
-    if (!enabled) {
-        appliedPower = 0;
-        ledcWrite(PWM_CHANNEL, 0);
+    const bool valid = taskReady && isfinite(target) && target >= 30 && target <= 100 &&
+        isfinite(overheat) && overheat > target && overheat <= 150 &&
+        isfinite(newKp) && newKp >= 0 && newKp <= 100 &&
+        isfinite(newKi) && newKi >= 0 && newKi <= 10 &&
+        isfinite(newKd) && newKd >= 0 && newKd <= 1000 && newWindowMs >= 1000 && newWindowMs <= 10000;
+    if (!active || !valid || (faultLatched && faultRevision == revision)) {
+        off();
+    } else {
+        if (changed || !enabled) off();
+        targetTemperature = target;
+        overheatTemperature = overheat;
+        kp = newKp; ki = newKi; kd = newKd; windowMs = newWindowMs;
+        enabled = true;
+        faultLatched = false;
     }
     portEXIT_CRITICAL(&outputMux);
 }
 
 HeaterOutputReport getHeaterOutputReport() {
     portENTER_CRITICAL(&outputMux);
-    HeaterOutputReport report{revision, appliedPower, measuredVoltage, SSR_FEEDBACK_ENABLED != 0};
+    HeaterOutputReport report{revision, windowPower, measuredVoltage, SSR_FEEDBACK_ENABLED != 0,
+                             outputOn, windowMs, onTimeMs, enabled, faultLatched};
     portEXIT_CRITICAL(&outputMux);
     return report;
 }

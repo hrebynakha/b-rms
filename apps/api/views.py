@@ -13,6 +13,7 @@ from apps.main.models import Controller
 from apps.main.models import Sensor
 from apps.main.models import Telemetry
 from apps.main.models import ManualControl
+from apps.main.models import Vessel
 from apps.main.services.manual_control import control_state, update_from_telemetry
 
 
@@ -47,8 +48,8 @@ class ControllerCommandsView(APIView):
             commands.append({"id": str(controller.wifi_reset_command), "type": "wifi_setup"})
         control = ManualControl.objects.filter(controller=controller).first()
         manual = control_state(control) if control else {
-            "active": False, "power_percent": 0, "signal_voltage": 0,
-            "revision": 0, "simulation": False, "output_mode": "pwm", "valid_for_ms": 10000,
+            "active": False, "revision": 0, "simulation": False,
+            "output_mode": "time_pwm", "valid_for_ms": 10000,
         }
         if control and control.active and manual["status"] in ("no_data", "overheat"):
             update_from_telemetry(controller)
@@ -122,6 +123,7 @@ class BootstrapView(APIView):
             "",
         )
         controller.save()
+        Vessel.objects.get_or_create(controller=controller, defaults={"name": controller.name})
         # create sensors
         for sensor_data in data["sensors"]:
 
@@ -154,26 +156,16 @@ class TelemetryView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        controller = Controller.objects.get(mac_address=data["mac_address"])
+        controller = get_object_or_404(Controller, mac_address=data["mac_address"])
 
         controller.last_seen_at = timezone.now()
         controller.save(update_fields=["last_seen_at"])
 
-        for key, value in data["metrics"].items():
-
-            sensor = Sensor.objects.filter(
-                controller=controller,
-                key=key,
-            ).first()
-
-            if not sensor:
-                print("Sensor not found")
-                continue
-
-            Telemetry.objects.create(
-                sensor=sensor,
-                value=value,
-            )
+        sensors = {sensor.key: sensor for sensor in controller.sensors.filter(key__in=data["metrics"])}
+        Telemetry.objects.bulk_create([
+            Telemetry(sensor=sensors[key], value=value)
+            for key, value in data["metrics"].items() if key in sensors
+        ])
 
         update_from_telemetry(controller, data.get("manual_control"))
         return Response({"success": True})

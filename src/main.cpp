@@ -55,7 +55,7 @@ void loop() {
     const uint32_t now = millis();
     if (now - lastCommandPollAt >= COMMAND_POLL_INTERVAL_MS) {
         lastCommandPollAt = now;
-        if (pollWiFiSetupCommand()) {
+        if (pollControllerCommands()) {
             stopHeaterOutput();
             Serial.println("B-RMS requested Wi-Fi setup.");
             deviceMode = DeviceMode::Provisioning;
