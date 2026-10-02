@@ -51,7 +51,7 @@ class ControllerCommandsView(APIView):
             "active": False, "revision": 0, "simulation": False,
             "output_mode": "time_pwm", "valid_for_ms": 10000,
         }
-        if control and control.active and manual["status"] in ("no_data", "overheat"):
+        if control and (control.active or control.pump_on) and manual["status"] in ("no_data", "overheat"):
             update_from_telemetry(controller)
             control.refresh_from_db()
             manual = control_state(control)

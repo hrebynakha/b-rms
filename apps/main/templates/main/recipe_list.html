@@ -20,7 +20,7 @@
                 <input type="text"
                        name="search"
                        class="form-control"
-                       placeholder="{% translate 'Search recipes...' %}"
+                       placeholder="{% translate "Search recipes..." %}"
                        value="{{ search }}">
                 {% if search %}
                     <a href="{% url 'recipe-list' %}" class="btn btn-outline-secondary">{% translate "Clear" %}</a>
@@ -50,7 +50,7 @@
                                                 class="btn btn-outline-secondary"
                                                 data-bs-toggle="dropdown"
                                                 aria-expanded="false"
-                                                aria-label="{% translate 'More actions' %}">
+                                                aria-label="{% translate "More actions" %}">
                                             <i class="bi bi-three-dots"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end p-2">

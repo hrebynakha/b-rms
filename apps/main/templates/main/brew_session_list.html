@@ -40,24 +40,25 @@
                                 <span>{{ session.created_at|date:"d M Y, H:i" }}</span>
                             </div>
                         </div>
-                        <div class="d-flex gap-2 mt-auto">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mt-auto">
+                            {% include "main/includes/session_cancel.html" %}
                             <a href="{% url 'brew-session-detail' session.id %}"
                                class="btn btn-outline-light flex-grow-1">{% translate "Open session" %}</a>
-                            {% if session.status == "completed" %}
+                            {% if session.status == "completed" or session.status == "cancelled" %}
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary"
                                             type="button"
                                             data-bs-toggle="dropdown"
                                             aria-expanded="false"
-                                            aria-label="{% translate 'More actions' %}">
+                                            aria-label="{% translate "More actions" %}">
                                         <i class="bi bi-three-dots"></i>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-end p-2">
                                         <form method="post"
                                               action="{% url 'brew-session-delete' %}"
-                                              data-confirm-message="{% translate 'Delete this completed session?' %}"
-                                              data-confirm-title="{% translate 'Delete session' %}"
-                                              data-confirm-label="{% translate 'Delete' %}">
+                                              data-confirm-message="{% translate "Delete this session?" %}"
+                                              data-confirm-title="{% translate "Delete session" %}"
+                                              data-confirm-label="{% translate "Delete" %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="session_id" value="{{ session.id }}">
                                             <button type="submit" class="dropdown-item text-danger rounded">

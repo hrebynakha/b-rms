@@ -990,3 +990,129 @@ msgstr "Частка часу та тривалість ON не узгоджен
 
 msgid "A disabled output must be OFF."
 msgstr "Вимкнений вихід має бути в стані OFF."
+
+msgid "Direct control"
+msgstr "Пряме керування"
+
+msgid "Full manual control"
+msgstr "Повне ручне керування"
+
+msgid "Heater and water circulation · ON / OFF"
+msgstr "ТЕН і циркуляція води · УВІМК. / ВИМК."
+
+msgid "Switch everything off"
+msgstr "Вимкнути все"
+
+msgid "Heater · SSR"
+msgstr "ТЕН · SSR"
+
+msgid "Direct output · GPIO25"
+msgstr "Пряме керування · GPIO25"
+
+msgid "Heater power"
+msgstr "Живлення ТЕНу"
+
+msgid "Waiting for controller…"
+msgstr "Очікуємо контролер…"
+
+msgid "Calculated GPIO signal: 0 / 3.3 V"
+msgstr "Розрахунковий сигнал GPIO: 0 / 3,3 В"
+
+msgid "Pump · circulation"
+msgstr "Помпа · циркуляція"
+
+msgid "JQC-3FF-S-Z relay · GPIO26"
+msgstr "Реле JQC-3FF-S-Z · GPIO26"
+
+msgid "Pump power"
+msgstr "Живлення помпи"
+
+msgid "Measured by INA226 · nominal supply 24 V"
+msgstr "Вимірювання INA226 · номінальне живлення 24 В"
+
+msgid "The heater runs at full power without PID. Overheat and connection loss protection remain active."
+msgstr "ТЕН працює без PID на повній потужності. Захист від перегріву та втрати зв’язку залишається активним."
+
+msgid "Temperature control · PID"
+msgstr "Керування температурою · PID"
+
+msgid "Heater and pump · ON/OFF"
+msgstr "ТЕН і помпа · УВІМК./ВИМК."
+
+msgid "Heater and pump"
+msgstr "ТЕН і помпа"
+
+msgid "Invalid command."
+msgstr "Некоректна команда."
+
+msgid "Stop PID control first."
+msgstr "Спочатку зупиніть PID-керування."
+
+msgid "Overheat: wait for cooling."
+msgstr "Перегрів: зачекайте охолодження."
+
+msgid "Output state unknown"
+msgstr "Стан виходу невідомий"
+
+msgid "ON · enabled"
+msgstr "Увімкнено"
+
+msgid "OFF · disabled"
+msgstr "Вимкнено"
+
+msgid "Measured ADC: %(voltage)s V"
+msgstr "Виміряно ADC: %(voltage)s В"
+
+msgid "Command confirmed by ESP32."
+msgstr "Команду підтверджено ESP32."
+
+msgid "Waiting for ESP32 confirmation…"
+msgstr "Очікуємо підтвердження ESP32…"
+
+msgid "Could not retrieve controller status."
+msgstr "Не вдалося отримати стан контролера."
+
+msgid "Command rejected."
+msgstr "Команду відхилено."
+
+msgid "Connection failed. Check the controller connection."
+msgstr "Помилка зв’язку. Перевірте підключення контролера."
+
+msgid "INA226 · live voltage and current"
+msgstr "INA226 · актуальні напруга та струм"
+
+msgid "INA226 unavailable or readings are stale"
+msgstr "INA226 недоступний або дані застарілі"
+
+msgid "Current"
+msgstr "Струм"
+
+msgid "Heater"
+msgstr "ТЕН"
+
+msgid "Pump"
+msgstr "Помпа"
+
+msgid "Cancelled"
+msgstr "Скасовано"
+
+msgid "Cancel brew session"
+msgstr "Скасувати варіння"
+
+msgid "Cancel this brew session? Its progress will remain in history."
+msgstr "Скасувати цю сесію варіння? Її прогрес залишиться в історії."
+
+msgid "Only a paused or unstarted brew session can be cancelled."
+msgstr "Можна скасувати лише призупинену або ще не розпочату сесію варіння."
+
+msgid "Brew session cancelled."
+msgstr "Сесію варіння скасовано."
+
+msgid "Brew session deleted."
+msgstr "Сесію варіння видалено."
+
+msgid "Only completed or cancelled brew sessions can be deleted."
+msgstr "Видаляти можна лише завершені або скасовані сесії варіння."
+
+msgid "Delete this session?"
+msgstr "Видалити цю сесію?"

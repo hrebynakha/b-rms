@@ -9,6 +9,7 @@ class BrewSessionStatus(models.TextChoices):
     WAITING = "waiting_temperature", _("Waiting for temperature")
     PAUSED = "paused", _("Paused")
     COMPLETED = "completed", _("Completed")
+    CANCELLED = "cancelled", _("Cancelled")
     FAILED = "failed", _("Failed")
 
 

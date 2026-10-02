@@ -64,15 +64,15 @@ const stepsData = JSON.parse(
     document.getElementById("steps-data").textContent
 );
 
-const stepLabel = "{% translate 'Step' %}";
-const nameLabel = "{% translate 'Name' %}";
-const temperatureLabel = "{% translate 'Temperature (°C)' %}";
-const durationLabel = "{% translate 'Duration (minutes)' %}";
-const modeLabel = "{% translate 'Step type' %}";
-const reachLabel = "{% translate 'Reach temperature' %}";
-const holdLabel = "{% translate 'Temperature hold' %}";
-const reachHelp = "{% translate 'Wait for the target, then continue immediately.' %}";
-const holdHelp = "{% translate 'Keep the temperature in range for the specified time.' %}";
+const stepLabel = "{% translate "Step" %}";
+const nameLabel = "{% translate "Name" %}";
+const temperatureLabel = "{% translate "Temperature (°C)" %}";
+const durationLabel = "{% translate "Duration (minutes)" %}";
+const modeLabel = "{% translate "Step type" %}";
+const reachLabel = "{% translate "Reach temperature" %}";
+const holdLabel = "{% translate "Temperature hold" %}";
+const reachHelp = "{% translate "Wait for the target, then continue immediately." %}";
+const holdHelp = "{% translate "Keep the temperature in range for the specified time." %}";
 
 let stepCounter = 0;
 
@@ -98,7 +98,7 @@ function renderStep(step = null) {
 
                     <h5 class="mb-0"><span class="step-handle"><i class="bi bi-grip-vertical"></i></span>${stepLabel} <span class="step-number">${stepCounter}</span></h5>
 
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-step" aria-label="{% translate 'Remove step' %}">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-step" aria-label="{% translate "Remove step" %}">
                         <i class="bi bi-trash"></i>
                     </button>
 

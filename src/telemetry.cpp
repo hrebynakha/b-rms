@@ -8,7 +8,7 @@
 #include "wifi_manager.h"
 
 namespace {
-constexpr char FIRMWARE_VERSION[] = "0.4.1";
+constexpr char FIRMWARE_VERSION[] = "0.5.0";
 constexpr uint32_t HTTP_TIMEOUT_MS = 5000;
 
 String makeDeviceId() {
@@ -98,7 +98,10 @@ bool pollControllerCommands() {
     JsonDocument document;
     if (deserializeJson(document, response)) return false;
     JsonObject manual = document["manual_control"].as<JsonObject>();
-    if (!manual.isNull() && manual["output_mode"] == "time_pwm") {
+    if (!manual.isNull() && manual["output_mode"] == "direct") {
+        setDirectCommand(manual["active"] == true, manual["pump_on"] == true,
+                         manual["warning_temperature"] | 0.0f, manual["revision"] | 0U);
+    } else if (!manual.isNull() && manual["output_mode"] == "time_pwm") {
         const uint32_t revision = manual["revision"] | 0U;
         const float target = manual["target_temperature"] | 0.0f;
         JsonObject gains = manual["pid"].as<JsonObject>();
@@ -134,7 +137,18 @@ String buildPayload() {
     const HeaterOutputReport report = getHeaterOutputReport();
     manual["revision"] = report.revision;
     manual["power_percent"] = report.powerPercent;
-    manual["output_mode"] = "time_pwm";
+    manual["output_mode"] = report.directMode ? "direct" : "time_pwm";
+    manual["pump_on"] = report.pumpOn;
+    if (isfinite(pumpVoltage)) {
+        manual["pump_voltage"] = pumpVoltage;
+    } else {
+        manual["pump_voltage"] = nullptr;
+    }
+    if (isfinite(pumpCurrent)) {
+        manual["pump_current"] = pumpCurrent;
+    } else {
+        manual["pump_current"] = nullptr;
+    }
     manual["ssr_on"] = report.ssrOn;
     manual["window_ms"] = report.windowMs;
     manual["on_time_ms"] = report.onTimeMs;

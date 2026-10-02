@@ -5,29 +5,37 @@
     {% translate "Breweries" %}
 {% endblock title %}
 {% block content %}
-    <div class="page-heading mb-4"><h1>{% translate "Breweries" %}</h1>
-        <a class="btn btn-outline-primary" href="{% url 'brewery-create' %}">{% translate 'Create brewery' %}</a>
+    <div class="page-heading mb-4">
+        <h1>{% translate "Breweries" %}</h1>
+        <a class="btn btn-outline-primary" href="{% url 'brewery-create' %}">{% translate "Create brewery" %}</a>
     </div>
-    <div data-page-poller
-         data-poll-interval="5000"
-         data-poll-active="{% if has_active_session %}true{% else %}false{% endif %}"></div>
+    <div data-page-poller data-poll-interval="5000" data-poll-active="true"></div>
     {% for brewery in breweries %}
         <div class="card bg-secondary mb-4"
              data-poll-region="brewery-{{ brewery.id }}">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                     <div>
                         <h3>{{ brewery.name }}</h3>
                         <small>{{ brewery.slug }}</small>
-                        {% if brewery.location %}<div class="text-body-secondary small"><i class="bi bi-geo-alt"></i> {{ brewery.location }}</div>{% endif %}
-                        <a class="btn btn-sm btn-outline-light mt-2" href="{% url 'brewery-settings' brewery.id %}">{% translate 'Brewery settings' %}</a>
+                        {% if brewery.location %}
+                            <div class="text-body-secondary small">
+                                <i class="bi bi-geo-alt"></i> {{ brewery.location }}
+                            </div>
+                        {% endif %}
                     </div>
-                    <button type="button"
-                            class="btn btn-danger btn-sm"
-                            data-bs-toggle="modal"
-                            data-bs-target="#deleteBreweryModal{{ brewery.id }}">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="brewery-actions">
+                        <a class="btn btn-sm btn-outline-secondary control-mode-link"
+                           href="{% url 'brewery-settings' brewery.id %}">
+                            <i class="bi bi-gear" aria-hidden="true"></i> {% translate "Brewery settings" %}
+                        </a>
+                        <button type="button"
+                                class="btn btn-danger btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteBreweryModal{{ brewery.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 <hr />
                 {% if brewery.active_session %}
@@ -52,7 +60,7 @@
                                         class="btn btn-primary mt-3 js-start-session"
                                         {% if not brewery.demo_ready %}disabled{% endif %}
                                         data-start-url="{% url 'api-brew-session-start' brewery.active_session.id %}"
-                                        data-error-message="{% translate 'Could not start session.' %}">
+                                        data-error-message="{% translate "Could not start session." %}">
                                     {% if brewery.active_session.mode == "demo" %}
                                         {% translate "Start 3-minute demo" %}
                                     {% else %}
@@ -83,7 +91,7 @@
                                     </div>
                                     <div class="progress"
                                          role="progressbar"
-                                         aria-label="{% translate 'Demo mash progress' %}"
+                                         aria-label="{% translate "Demo mash progress" %}"
                                          aria-valuenow="{{ brewery.session_progress.percent }}"
                                          aria-valuemin="0"
                                          aria-valuemax="100">
@@ -92,6 +100,7 @@
                                     </div>
                                 </div>
                             {% endif %}
+                            <div class="mt-3">{% include "main/includes/session_cancel.html" with session=brewery.active_session %}</div>
                             <div class="alert alert-danger mt-3 mb-0 d-none js-start-error"
                                  role="alert"></div>
                         </div>
@@ -101,116 +110,188 @@
                 {% for controller in brewery.controllers.all %}
                     <div class="card bg-dark mb-3">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex flex-wrap justify-content-between gap-3">
                                 <div>
                                     <strong>{{ controller.name }}</strong>
-                                    {% if controller.vessel %}<div class="small">{{ controller.vessel.name }} · {{ controller.vessel.volume_liters }} {% translate 'L' %}</div>{% endif %}
-                                    <a class="small" href="{% url 'controller-settings' controller.id %}">{% translate 'Vessel settings' %}</a>
+                                    {% if controller.vessel %}
+                                        <div class="small">{{ controller.vessel.name }} · {{ controller.vessel.volume_liters }} {% translate "L" %}</div>
+                                    {% endif %}
+                                    <a class="small" href="{% url 'controller-settings' controller.id %}">{% translate "Vessel settings" %}</a>
                                     <div class="text-muted">{{ controller.ip }}</div>
                                 </div>
-                                <div>
-                                    {% if controller.is_online %}
-                                        <span class="badge bg-success">{% translate "ONLINE" %}</span>
+                                <div class="controller-toolbar">
+                                    <div class="controller-statuses" aria-live="polite">
+                                        <div class="controller-status-section {% if controller.is_online %}output-status-on{% else %}output-status-offline{% endif %}">
+                                            <span class="controller-status-title"><i class="bi bi-cpu" aria-hidden="true"></i> {% translate "Controller" %}</span>
+                                        <strong><i class="bi {% if controller.is_online %}bi-wifi{% else %}bi-wifi-off{% endif %}"
+   aria-hidden="true"></i>
+                                        {% if controller.is_online %}
+                                            {% translate "ONLINE" %}
+                                        {% else %}
+                                            {% translate "OFFLINE" %}
+                                        {% endif %}
+                                    </strong>
+                                </div>
+                                {% for output in controller.output_statuses %}
+                                    <div class="controller-status-section {% if output.on == None %}output-status-unknown{% elif output.on %}output-status-on{% else %}output-status-off{% endif %}">
+                                    <span class="controller-status-title"><i class="bi {% if forloop.first %}bi-lightning-charge-fill{% else %}bi-water{% endif %}"
+   aria-hidden="true"></i>
+                                    {% if forloop.first %}
+                                        {% translate "Heater" %}
                                     {% else %}
-                                        <span class="badge bg-danger">{% translate "OFFLINE" %}</span>
+                                        {% translate "Pump" %}
                                     {% endif %}
-                                    <a href="{% url 'manual-control' controller.id %}" class="btn btn-sm btn-outline-light ms-2">
-                                        <i class="bi bi-sliders"></i> {% translate "Manual control" %}
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-outline-warning ms-2"
-                                            data-bs-toggle="modal" data-bs-target="#resetControllerModal{{ controller.id }}"
-                                            {% if controller.wifi_reset_command %}disabled{% endif %}>
-                                        {% translate "Reset Wi-Fi" %}
-                                    </button>
-                                    {% if controller.wifi_reset_command %}
-                                        <div class="text-warning small mt-2">{% translate "Waiting for Wi-Fi setup" %}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <hr />
-                            <div class="row gap-2">
-                                {% for sensor in controller.sensors.all %}
-                                    <div class="p-2 border rounded col-md-3 mb-2">
-                                        <strong>{{ sensor.name }}</strong>
-                                        <div>{{ sensor.get_kind_display }}</div>
-                                        <small class="text-muted">{{ sensor.key }}</small>
-                                        <a href="{% url 'sensor-detail' sensor.id %}"
-                                           class="btn btn-sm btn-outline-light">{% translate "View history" %}</a>
-                                        <hr />
-                                        {% with latest=sensor.telemetry.first %}
-                                            {% if latest %}
-                                                <div class="fs-4">{{ latest.value }} {{ sensor.unit }}</div>
-                                                <small class="text-muted">{{ latest.created_at }}</small>
-                                            {% else %}
-                                                <div class="text-muted">{% translate "No telemetry" %}</div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
+                                </span>
+                            <strong><i class="bi {% if output.on == None %}bi-question-circle{% elif output.on %}bi-check-circle-fill{% else %}bi-power{% endif %}"
+   aria-hidden="true"></i>
+                            {% if output.on == None %}
+                                {% translate "No data" %}
+                            {% elif output.on %}
+                                {% translate "ON · enabled" %}
+                            {% else %}
+                                {% translate "OFF · disabled" %}
+                            {% endif %}
+                        </strong>
                     </div>
-                    <div class="modal fade" id="resetControllerModal{{ controller.id }}" tabindex="-1"
-                         aria-labelledby="resetControllerLabel{{ controller.id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content bg-dark">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="resetControllerLabel{{ controller.id }}">{% translate "Reset Wi-Fi" %}</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
-                                </div>
-                                <form method="post" action="{% url 'controller-reset' controller.id %}">
-                                    {% csrf_token %}
-                                    <div class="modal-body">
-                                        <p><strong>{{ controller.name }}</strong></p>
-                                        <p>{% translate "Clear saved connection settings and switch this controller to Wi-Fi setup? Telemetry will stop until you configure it again." %}</p>
-                                        <p>{% translate "Connect to B-RMS-Setup (password: brewmaster) and open http://192.168.4.1. An offline controller will receive the command when it reconnects." %}</p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
-                                        <button type="submit" class="btn btn-warning">{% translate "Confirm reset" %}</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal fade"
-                         id="deleteBreweryModal{{ brewery.id }}"
-                         tabindex="-1"
-                         aria-labelledby="deleteBreweryModalLabel{{ brewery.id }}"
-                         aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content bg-dark">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="deleteBreweryModalLabel{{ brewery.id }}">{% translate "Delete brewery" %}</h5>
-                                    <button type="button"
-                                            class="btn-close btn-close-white"
-                                            data-bs-dismiss="modal"
-                                            aria-label="{% translate 'Close' %}"></button>
-                                </div>
-                                <form method="post" action="{% url 'brewery-delete' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="brewery_id" value="{{ brewery.id }}">
-                                    <div class="modal-body">
-                                        {% blocktranslate with brewery_name=brewery.name %}Are you sure you want to delete <strong>{{ brewery_name }}</strong>?{% endblocktranslate %}
-                                        <div class="text-danger mt-3">{% translate "This action cannot be undone." %}</div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
-                                        <button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="text-muted">{% translate "No controllers" %}</div>
                 {% endfor %}
             </div>
+            <div class="controller-actions">
+                <a href="{% url 'direct-control' controller.id %}"
+                   class="btn btn-sm btn-outline-secondary control-mode-link">
+                    <i class="bi bi-toggles" aria-hidden="true"></i> {% translate "Direct control" %}
+                </a>
+                <a href="{% url 'manual-control' controller.id %}"
+                   class="btn btn-sm btn-outline-secondary control-mode-link">
+                    <i class="bi bi-sliders" aria-hidden="true"></i> {% translate "Manual control" %}
+                </a>
+                <button type="button"
+                        class="btn btn-sm btn-outline-warning controller-reset-button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#resetControllerModal{{ controller.id }}"
+                        {% if controller.wifi_reset_command %}disabled{% endif %}>
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> {% translate "Reset Wi-Fi" %}
+                </button>
+                {% if controller.wifi_reset_command %}
+                    <div class="text-warning small mt-2">{% translate "Waiting for Wi-Fi setup" %}</div>
+                {% endif %}
+            </div>
         </div>
-    {% empty %}
-        <div class="alert alert-warning">{% translate "No breweries registered" %}</div>
-    {% endfor %}
-    <script>
+    </div>
+    <hr />
+    <div class="row g-3">
+        {% for sensor in controller.sensors.all %}
+            <div class="col-sm-6 col-xl-4">
+                {% with latest=sensor.telemetry.first %}
+                    <article class="telemetry-card telemetry-card-{{ sensor.kind }}"
+                             data-telemetry-id="{{ sensor.id }}"
+                             data-reading-id="{{ latest.id|default:'' }}">
+                        <div class="telemetry-card-heading">
+                            <span class="telemetry-icon" aria-hidden="true"><i class="bi {% if sensor.kind == 'temperature' %}bi-thermometer-half{% elif sensor.kind == 'ambient_temperature' %}bi-thermometer-sun{% elif sensor.kind == 'voltage' %}bi-lightning-charge-fill{% elif sensor.kind == 'water_level' %}bi-droplet-half{% else %}bi-activity{% endif %}"></i></span>
+                            <div>
+                                <h6>{{ sensor.name }}</h6>
+                                <span class="small text-body-secondary">{{ sensor.get_kind_display }}</span>
+                            </div>
+                        </div>
+                        <div class="telemetry-card-reading" aria-live="polite">
+                            {% if latest %}
+                                <div class="telemetry-value">
+                                    {{ latest.value }} <span>{{ sensor.unit }}</span>
+                                </div>
+                                <time class="small text-body-secondary"
+                                      datetime="{{ latest.created_at|date:'c' }}"><i class="bi bi-clock" aria-hidden="true"></i> {{ latest.created_at }}</time>
+                            {% else %}
+                                <div class="telemetry-value">
+                                    — <span>{{ sensor.unit }}</span>
+                                </div>
+                                <span class="small text-body-secondary">{% translate "No telemetry" %}</span>
+                            {% endif %}
+                        </div>
+                        <div class="telemetry-card-footer">
+                            <a href="{% url 'sensor-detail' sensor.id %}"
+                               class="btn btn-sm btn-outline-secondary control-mode-link">
+                                <i class="bi bi-graph-up" aria-hidden="true"></i> {% translate "View history" %}
+                            </a>
+                        </div>
+                    </article>
+                {% endwith %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+</div>
+<div class="modal fade"
+     id="resetControllerModal{{ controller.id }}"
+     tabindex="-1"
+     aria-labelledby="resetControllerLabel{{ controller.id }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetControllerLabel{{ controller.id }}">{% translate "Reset Wi-Fi" %}</h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="{% translate "Close" %}"></button>
+            </div>
+            <form method="post" action="{% url 'controller-reset' controller.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>
+                        <strong>{{ controller.name }}</strong>
+                    </p>
+                    <p>
+                        {% translate "Clear saved connection settings and switch this controller to Wi-Fi setup? Telemetry will stop until you configure it again." %}
+                    </p>
+                    <p>
+                        {% translate "Connect to B-RMS-Setup (password: brewmaster) and open http://192.168.4.1. An offline controller will receive the command when it reconnects." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                    <button type="submit" class="btn btn-warning">{% translate "Confirm reset" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade"
+     id="deleteBreweryModal{{ brewery.id }}"
+     tabindex="-1"
+     aria-labelledby="deleteBreweryModalLabel{{ brewery.id }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBreweryModalLabel{{ brewery.id }}">{% translate "Delete brewery" %}</h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="{% translate "Close" %}"></button>
+            </div>
+            <form method="post" action="{% url 'brewery-delete' %}">
+                {% csrf_token %}
+                <input type="hidden" name="brewery_id" value="{{ brewery.id }}">
+                <div class="modal-body">
+                    {% blocktranslate with brewery_name=brewery.name %}Are you sure you want to delete <strong>{{ brewery_name }}</strong>?{% endblocktranslate %}
+                    <div class="text-danger mt-3">{% translate "This action cannot be undone." %}</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                    <button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="text-muted">{% translate "No controllers" %}</div>
+{% endfor %}
+</div>
+</div>
+{% empty %}
+<div class="alert alert-warning">{% translate "No breweries registered" %}</div>
+{% endfor %}
+<script>
     document.addEventListener("click", async (event) => {
       const button = event.target.closest(".js-start-session");
       if (!button) return;
@@ -230,7 +311,7 @@
         button.disabled = false;
       }
     });
-    </script>
+</script>
 {% endblock content %}
 {% block extra_js %}
     <script src="{% static 'js/page-poller.js' %}"></script>

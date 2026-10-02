@@ -39,7 +39,16 @@ class TelemetrySerializer(serializers.Serializer):
 class ManualReportSerializer(serializers.Serializer):
     revision = serializers.IntegerField(min_value=0)
     power_percent = serializers.FloatField(min_value=0, max_value=100)
-    output_mode = serializers.ChoiceField(choices=["pwm", "time_pwm"], required=False)
+    output_mode = serializers.ChoiceField(choices=["pwm", "time_pwm", "direct"], required=False)
+    pump_on = serializers.BooleanField(required=False)
+    pump_voltage = serializers.FloatField(min_value=0, max_value=26, required=False, allow_null=True)
+    pump_current = serializers.FloatField(required=False, allow_null=True)
+
+    def validate_pump_voltage(self, value):
+        return self.validate_measured_voltage(value)
+
+    def validate_pump_current(self, value):
+        return self.validate_measured_voltage(value)
     ssr_on = serializers.BooleanField(required=False)
     window_ms = serializers.IntegerField(min_value=1000, max_value=10000, required=False)
     on_time_ms = serializers.IntegerField(min_value=0, max_value=10000, required=False)
@@ -59,7 +68,9 @@ class ManualReportSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        if attrs.get("output_mode") == "time_pwm":
+        if attrs.get("output_mode") == "direct" and "pump_on" not in attrs:
+            raise serializers.ValidationError(_("Direct telemetry requires the pump state."))
+        if attrs.get("output_mode") in ("time_pwm", "direct"):
             required = ("ssr_on", "window_ms", "on_time_ms", "enabled")
             if any(key not in attrs for key in required):
                 raise serializers.ValidationError(_("Time PWM telemetry requires the output state and window timing."))

@@ -66,7 +66,7 @@ def manual_status_view(request, controller_id):
 
 
 def update_from_telemetry_if_unsafe(control):
-    if control.active and control_state(control)["status"] in ("no_data", "overheat"):
+    if (control.active or control.pump_on) and control_state(control)["status"] in ("no_data", "overheat"):
         update_from_telemetry(control.controller)
         control.refresh_from_db()
 
@@ -83,6 +83,10 @@ def manual_action_view(request, controller_id):
         return JsonResponse({"errors": serializer.errors}, status=400)
     data = serializer.validated_data
     action = data.pop("action")
+    if action != "stop" and control.direct_mode and (control.active or control.pump_on):
+        return JsonResponse({"detail": _("Stop direct control first.")}, status=409)
+    control.direct_mode = False
+    control.pump_on = False
     if action != "stop":
         for key, value in data.items():
             setattr(control, key, value)

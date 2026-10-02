@@ -5,6 +5,12 @@
 #ifndef SSR_OUTPUT_PIN
 #define SSR_OUTPUT_PIN 25
 #endif
+#ifndef PUMP_OUTPUT_PIN
+#define PUMP_OUTPUT_PIN 26
+#endif
+#ifndef PUMP_RELAY_ACTIVE_HIGH
+#define PUMP_RELAY_ACTIVE_HIGH 1
+#endif
 #ifndef SSR_FEEDBACK_PIN
 #define SSR_FEEDBACK_PIN 35
 #endif
@@ -17,6 +23,8 @@ constexpr uint32_t MAX_AGE_MS = 10000;
 portMUX_TYPE outputMux = portMUX_INITIALIZER_UNLOCKED;
 HeatingPid pid;
 bool enabled = false, sensorValid = false, faultLatched = false;
+bool directMode = false, pumpOn = false;
+void writePump(bool on) { digitalWrite(PUMP_OUTPUT_PIN, on == bool(PUMP_RELAY_ACTIVE_HIGH) ? HIGH : LOW); }
 bool outputOn = false, resetPending = true, taskReady = false;
 float sensorTemperature = NAN, targetTemperature = 50, overheatTemperature = 60;
 float kp = 10, ki = .1f, kd = 5;
@@ -26,6 +34,8 @@ uint32_t windowMs = 2000, windowAt = 0, onTimeMs = 0;
 float windowPower = 0, measuredVoltage = NAN;
 
 void off() {
+    pumpOn = false;
+    writePump(false);
     enabled = false;
     outputOn = false;
     windowPower = 0;
@@ -41,9 +51,14 @@ void outputTask(void *) {
         const uint32_t now = millis();
         const bool connected = WiFi.status() == WL_CONNECTED;
         portENTER_CRITICAL(&outputMux);
-        if (enabled && (!connected || !sensorValid || now - commandAt >= MAX_AGE_MS ||
-                        now - sensorAt >= MAX_AGE_MS || sensorTemperature >= overheatTemperature)) trip();
-        if (enabled) {
+        if ((enabled || pumpOn) && (!connected || !sensorValid || now - commandAt >= MAX_AGE_MS ||
+                        now - sensorAt >= MAX_AGE_MS || (enabled && sensorTemperature >= overheatTemperature))) trip();
+        if (enabled && directMode) {
+            windowPower = 100;
+            onTimeMs = windowMs;
+            outputOn = true;
+            digitalWrite(SSR_OUTPUT_PIN, HIGH);
+        } else if (enabled) {
             const bool reset = resetPending;
             if (reset) { pid.reset(); windowAt = now; resetPending = false; }
             if (reset || sensorSequence != consumedSequence) {
@@ -76,6 +91,9 @@ void outputTask(void *) {
 }
 
 void beginHeaterOutput() {
+    writePump(false);
+    pinMode(PUMP_OUTPUT_PIN, OUTPUT);
+    writePump(false);
     pinMode(SSR_OUTPUT_PIN, OUTPUT);
     digitalWrite(SSR_OUTPUT_PIN, LOW);
     if (SSR_FEEDBACK_ENABLED) {
@@ -114,6 +132,8 @@ void updateHeaterTemperature(bool valid, float temperature) {
 void setHeaterCommand(bool active, float target, float overheat, float newKp, float newKi,
                       float newKd, uint32_t newWindowMs, uint32_t commandRevision) {
     portENTER_CRITICAL(&outputMux);
+    if (directMode) off();
+    directMode = false;
     const bool changed = revision != commandRevision || target != targetTemperature ||
         newKp != kp || newKi != ki || newKd != kd || newWindowMs != windowMs || overheat != overheatTemperature;
     revision = commandRevision;
@@ -139,7 +159,32 @@ void setHeaterCommand(bool active, float target, float overheat, float newKp, fl
 HeaterOutputReport getHeaterOutputReport() {
     portENTER_CRITICAL(&outputMux);
     HeaterOutputReport report{revision, windowPower, measuredVoltage, SSR_FEEDBACK_ENABLED != 0,
-                             outputOn, windowMs, onTimeMs, enabled, faultLatched};
+                             outputOn, windowMs, onTimeMs, enabled, faultLatched, directMode, pumpOn};
     portEXIT_CRITICAL(&outputMux);
     return report;
+}
+
+void setDirectCommand(bool heaterOn, bool requestedPumpOn, float overheat, uint32_t commandRevision) {
+    portENTER_CRITICAL(&outputMux);
+    const bool blocked = faultLatched && faultRevision == commandRevision;
+    if (!directMode || revision != commandRevision) off();
+    directMode = true;
+    revision = commandRevision;
+    commandAt = millis();
+    if (!taskReady || blocked || !isfinite(overheat) || overheat <= 0 || overheat > 150) {
+        off();
+    } else {
+        faultLatched = false;
+        overheatTemperature = overheat;
+        enabled = heaterOn;
+        pumpOn = requestedPumpOn;
+        writePump(pumpOn);
+        if (!enabled) {
+            outputOn = false;
+            windowPower = 0;
+            onTimeMs = 0;
+            digitalWrite(SSR_OUTPUT_PIN, LOW);
+        }
+    }
+    portEXIT_CRITICAL(&outputMux);
 }

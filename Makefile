@@ -8,6 +8,9 @@ migrations:
 translations:
 	python scripts/compile_translations.py
 
+lint-templates:
+	python -m djlint templates apps/main/templates --lint
+
 firmware:
 	pio run -e b-rms
 

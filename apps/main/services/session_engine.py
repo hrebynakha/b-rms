@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Optional, Tuple
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -156,7 +157,12 @@ def refresh_session(session: BrewSession, *, now=None) -> SessionProgress:
                 update_fields.append("status")
 
     if update_fields:
-        session.save(update_fields=list(dict.fromkeys(update_fields)))
+        # A concurrent page refresh must not revive a cancelled session.
+        changed = BrewSession.objects.filter(pk=session.pk).exclude(
+            status=BrewSessionStatus.CANCELLED,
+        ).update(**{field: getattr(session, field) for field in set(update_fields)})
+        if not changed:
+            session.refresh_from_db()
 
     return _progress_for(session, now, steps)
 
@@ -168,7 +174,7 @@ def start_session(session_id: int, *, now=None) -> Tuple[BrewSession, SessionPro
     session = BrewSession.objects.select_for_update().get(pk=session_id)
 
     from apps.main.models import ManualControl
-    if ManualControl.objects.filter(controller__brewery=session.brewery, active=True).exists():
+    if ManualControl.objects.filter(Q(active=True) | Q(pump_on=True), controller__brewery=session.brewery).exists():
         raise SessionStartError(_("Stop manual temperature control first."))
 
     if session.status != BrewSessionStatus.PENDING:
@@ -302,7 +308,7 @@ def _progress_for(session: BrewSession, now, steps=None) -> SessionProgress:
         effective_now = (
             session.paused_at
             if session.status == BrewSessionStatus.PAUSED and session.paused_at
-            else now
+            else session.completed_at or now
         )
         step_elapsed = min(
             durations[step_index],
@@ -399,3 +405,25 @@ def _temperature_in_range(current_temperature, step):
         return False
     target = float(step.target_temperature)
     return target - TEMPERATURE_TOLERANCE <= current_temperature <= target + TEMPERATURE_TOLERANCE
+
+
+@transaction.atomic
+def cancel_session(session_id: int, *, now=None):
+    now = now or timezone.now()
+    session = BrewSession.objects.select_for_update().get(pk=session_id)
+    if session.status == BrewSessionStatus.CANCELLED:
+        return session, _progress_for(session, now)
+    if session.status != BrewSessionStatus.PAUSED and not (
+        session.status == BrewSessionStatus.PENDING and session.started_at is None
+    ):
+        raise SessionStateError(_("Only a paused or unstarted brew session can be cancelled."))
+    progress = _progress_for(session, now)
+    session.step_elapsed_seconds = progress.step_elapsed_seconds
+    session.step_started_at = None
+    session.paused_at = None
+    session.temperature_override = False
+    session.status = BrewSessionStatus.CANCELLED
+    session.completed_at = now
+    session.save(update_fields=["step_elapsed_seconds", "step_started_at", "paused_at",
+                                "temperature_override", "status", "completed_at"])
+    return session, _progress_for(session, now)

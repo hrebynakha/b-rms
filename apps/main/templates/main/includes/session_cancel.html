@@ -1,0 +1,13 @@
+{% load i18n %}
+{% if session.status == "paused" or session.status == "pending" and not session.started_at %}
+    <form method="post"
+          action="{% url 'brew-session-cancel' session.id %}"
+          data-confirm-message="{% translate "Cancel this brew session? Its progress will remain in history." %}"
+          data-confirm-title="{% translate "Cancel brew session" %}"
+          data-confirm-label="{% translate "Cancel brew session" %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-stop-circle" aria-hidden="true"></i> {% translate "Cancel brew session" %}
+        </button>
+    </form>
+{% endif %}

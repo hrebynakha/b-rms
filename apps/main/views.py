@@ -18,6 +18,7 @@ from apps.main.forms import (
 )
 from apps.main.models.brewery import Brewery
 from apps.main.models import Controller
+from apps.main.services.manual_control import MAX_AGE_SECONDS
 from apps.main.models.sensor import Sensor
 from apps.main.models.telemetry import Telemetry
 from apps.main.models.recipe import Recipe, RecipeStep
@@ -28,6 +29,8 @@ from apps.main.services.session_engine import (
     TEMPERATURE_TOLERANCE,
     demo_hardware_is_ready,
     refresh_session,
+    cancel_session,
+    SessionStateError,
     step_duration_seconds,
 )
 
@@ -60,7 +63,7 @@ def brewery_list_view(request):
 
     breweries = (
         Brewery.objects.prefetch_related(
-            "controllers",
+            Prefetch("controllers", queryset=Controller.objects.select_related("manual_control")),
             "controllers__sensors",
             "controllers__sensors__telemetry",
             Prefetch(
@@ -93,6 +96,17 @@ def brewery_list_view(request):
         if brewery.active_session is None and pending_candidate:
             brewery.active_session, brewery.session_progress = pending_candidate
         brewery.demo_ready = demo_hardware_is_ready(brewery)
+        now = timezone.now()
+        for controller in brewery.controllers.all():
+            control = getattr(controller, "manual_control", None)
+            fresh = bool(control and control.reported_at
+                         and control.reported_output_mode in ("direct", "time_pwm")
+                         and 0 <= (now - control.reported_at).total_seconds() <= MAX_AGE_SECONDS)
+            controller.output_statuses = [
+                {"label": _("Heater · SSR"), "on": control.reported_ssr_on if fresh else None},
+                {"label": _("Pump · circulation"), "on": control.reported_pump_on if fresh else None},
+            ]
+
 
     has_active_session = any(
         brewery.active_session
@@ -500,11 +514,11 @@ def recipe_delete_view(request):
 def brew_session_delete_view(request):
     if request.method == "POST":
         session = get_object_or_404(BrewSession, pk=request.POST.get("session_id"))
-        if session.status == BrewSessionStatus.COMPLETED:
+        if session.status in (BrewSessionStatus.COMPLETED, BrewSessionStatus.CANCELLED):
             session.delete()
-            messages.success(request, _("Completed brew session deleted."))
+            messages.success(request, _("Brew session deleted."))
         else:
-            messages.error(request, _("Only completed brew sessions can be deleted."))
+            messages.error(request, _("Only completed or cancelled brew sessions can be deleted."))
     return redirect("brew-session-list")
 
 
@@ -593,3 +607,15 @@ def _session_temperature_chart(session):
             }
         )
     return {"datasets": datasets}
+
+
+@require_POST
+def brew_session_cancel_view(request, session_id):
+    get_object_or_404(BrewSession, pk=session_id)
+    try:
+        cancel_session(session_id)
+    except SessionStateError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, _("Brew session cancelled."))
+    return redirect("brew-session-detail", session_id=session_id)

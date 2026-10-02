@@ -30,7 +30,9 @@
                             <i class="bi bi-thermometer-low"></i>
                             <div>
                                 <strong>{% translate "Temperature outside the allowed range" %}</strong>
-                                <div>{% blocktranslate with current=latest_temperature minimum=session_progress.minimum_temperature maximum=session_progress.maximum_temperature %}{{ current }}°C; allowed {{ minimum }}–{{ maximum }}°C.{% endblocktranslate %}</div>
+                                <div>
+                                    {% blocktranslate with current=latest_temperature minimum=session_progress.minimum_temperature maximum=session_progress.maximum_temperature %}{{ current }}°C; allowed {{ minimum }}–{{ maximum }}°C.{% endblocktranslate %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -50,6 +52,8 @@
                                 <i class="bi bi-thermometer-half"></i>
                             {% elif session.status == "paused" %}
                                 <i class="bi bi-pause-circle-fill"></i>
+                            {% elif session.status == "cancelled" %}
+                                <i class="bi bi-stop-circle" aria-hidden="true"></i>
                             {% elif session.status == "completed" %}
                                 <i class="bi bi-check-circle-fill"></i>
                             {% else %}
@@ -107,6 +111,7 @@
                             {% endif %}
                         </div>
                     </div>
+                    <div class="mt-3">{% include "main/includes/session_cancel.html" %}</div>
                     <div class="alert alert-danger mt-3 mb-0 d-none js-session-error"
                          role="alert"></div>
                 </div>
@@ -256,8 +261,8 @@
             if (!button) return;
             if (button.dataset.confirm) {
                 const confirmed = await window.confirmAction(button.dataset.confirm, {
-                    title: "{% translate 'Temperature override' %}",
-                    confirmLabel: "{% translate 'Continue anyway' %}",
+                    title: "{% translate "Temperature override" %}",
+                    confirmLabel: "{% translate "Continue anyway" %}",
                     tone: "warning"
                 });
                 if (!confirmed) return;
@@ -280,8 +285,8 @@
         });
 
         const temperatureCharts = new Map();
-        const liveLabel = "{% translate 'Live' %}";
-        const lastReadingLabel = "{% translate 'Last reading' %}";
+        const liveLabel = "{% translate "Live" %}";
+        const lastReadingLabel = "{% translate "Last reading" %}";
 
         function updateChartReading(element, dataset) {
             element.className = `chart-reading ${dataset.isLive ? "chart-reading-live" : "chart-reading-history"}`;

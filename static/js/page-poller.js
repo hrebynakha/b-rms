@@ -35,7 +35,18 @@
         const replacement = Array.from(
           nextDocument.querySelectorAll("[data-poll-region]")
         ).find((candidate) => candidate.dataset.pollRegion === key);
-        if (replacement) region.replaceWith(replacement);
+        if (replacement) {
+          const previousReadings = new Map(Array.from(region.querySelectorAll('[data-telemetry-id]'),
+            card => [card.dataset.telemetryId, card.dataset.readingId]));
+          replacement.querySelectorAll('[data-telemetry-id]').forEach(card => {
+            if (card.dataset.readingId && previousReadings.has(card.dataset.telemetryId) &&
+                previousReadings.get(card.dataset.telemetryId) !== card.dataset.readingId) {
+              card.classList.add('is-updated');
+              card.addEventListener('animationend', () => card.classList.remove('is-updated'), {once: true});
+            }
+          });
+          region.replaceWith(replacement);
+        }
       });
 
       const nextPoller = nextDocument.querySelector("[data-page-poller]");

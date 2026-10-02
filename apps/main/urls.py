@@ -1,4 +1,5 @@
 from django.urls import path
+from apps.main.direct_views import direct_control_view, direct_status_view, direct_action_view
 from apps.main.settings_views import brewery_settings_view, controller_settings_view
 from apps.main.manual_views import manual_control_view, manual_status_view, manual_action_view
 from apps.main.views import (
@@ -14,10 +15,15 @@ from apps.main.views import (
     brew_session_list_view,
     brew_session_create_view,
     brew_session_delete_view,
+    brew_session_cancel_view,
     sensor_cleanup_view,
 )
 
 urlpatterns = [
+    path("brew-sessions/<int:session_id>/cancel/", brew_session_cancel_view, name="brew-session-cancel"),
+    path("controllers/<int:controller_id>/direct/", direct_control_view, name="direct-control"),
+    path("controllers/<int:controller_id>/direct/status/", direct_status_view, name="direct-status"),
+    path("controllers/<int:controller_id>/direct/action/", direct_action_view, name="direct-action"),
     path("breweries/create/", brewery_settings_view, name="brewery-create"),
     path("breweries/<int:brewery_id>/settings/", brewery_settings_view, name="brewery-settings"),
     path("controllers/<int:controller_id>/settings/", controller_settings_view, name="controller-settings"),

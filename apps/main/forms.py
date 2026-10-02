@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.main.models.recipe import Recipe
@@ -35,7 +36,7 @@ class ControllerSettingsForm(forms.ModelForm):
     def clean_brewery(self):
         brewery = self.cleaned_data["brewery"]
         if brewery.pk != self.original_brewery_id:
-            if ManualControl.objects.filter(controller=self.instance, active=True).exists():
+            if ManualControl.objects.filter(Q(active=True) | Q(pump_on=True), controller=self.instance).exists():
                 raise forms.ValidationError(_("Stop manual control before moving this controller."))
             if BrewSession.objects.filter(brewery_id__in=[brewery.pk, self.original_brewery_id], status__in=[
                 BrewSessionStatus.RUNNING, BrewSessionStatus.HEATING,

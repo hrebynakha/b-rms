@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}
+    {% translate "Direct control" %} · {{ controller.name }}
+{% endblock title %}
+{% block content %}
+    <div class="page-shell"
+         id="direct-panel"
+         data-status-url="{% url 'direct-status' controller.id %}"
+         data-action-url="{% url 'direct-action' controller.id %}">
+        <a class="back-link" href="{% url 'brewery-list' %}">← {% translate "Controllers" %}</a>
+        <div class="page-heading my-4">
+            <div>
+                <span class="eyebrow">{% translate "Full manual control" %}</span>
+                <h1>{{ controller.name }}</h1>
+                <div class="control-mode-actions mt-3 mb-2">
+                    <a href="{% url 'manual-control' controller.id %}"
+                       class="btn btn-sm btn-outline-secondary control-mode-link">
+                        <i class="bi bi-sliders" aria-hidden="true"></i> {% translate "Manual control" %}
+                    </a>
+                    <a href="{% url 'controller-settings' controller.id %}"
+                       class="btn btn-sm btn-outline-secondary control-mode-link">
+                        <i class="bi bi-gear" aria-hidden="true"></i> {% translate "Vessel settings" %}
+                    </a>
+                </div>
+                <p class="text-body-secondary">{% translate "Heater and water circulation · ON / OFF" %}</p>
+            </div>
+            <button id="direct-stop" type="button" class="btn btn-danger" disabled>
+                <i class="bi bi-stop-fill" aria-hidden="true"></i> {% translate "Switch everything off" %}
+            </button>
+        </div>
+        <form id="direct-token">
+            {% csrf_token %}
+        </form>
+        <div id="direct-error" class="alert alert-danger d-none" role="alert"></div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card app-card direct-card h-100">
+                    <div class="card-body p-4">
+                        <i class="bi bi-lightning-charge direct-icon"></i>
+                        <h2 class="h4 mt-3">{% translate "Heater · SSR" %}</h2>
+                        <p class="text-body-secondary">{% translate "Direct output · GPIO25" %}</p>
+                        <label class="direct-switch">
+                            <span>{% translate "Heater power" %}</span>
+                            <input id="direct-heater" type="checkbox" role="switch" disabled>
+                            <span class="direct-track" aria-hidden="true"></span>
+                        </label>
+                        <div id="heater-state"
+                             class="output-status output-status-unknown mt-3"
+                             aria-live="polite">
+                            <i id="heater-state-icon"
+                               class="bi bi-question-circle"
+                               aria-hidden="true"></i>
+                            <span id="heater-state-text">{% translate "Waiting for controller…" %}</span>
+                        </div>
+                        <div id="heater-voltage" class="manual-reading">— V</div>
+                        <small class="text-body-secondary">{% translate "Calculated GPIO signal: 0 / 3.3 V" %}</small>
+                        <div id="heater-measured" class="small mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card app-card direct-card h-100">
+                    <div class="card-body p-4">
+                        <i class="bi bi-water direct-icon"></i>
+                        <h2 class="h4 mt-3">{% translate "Pump · circulation" %}</h2>
+                        <p class="text-body-secondary">{% translate "JQC-3FF-S-Z relay · GPIO26" %}</p>
+                        <label class="direct-switch">
+                            <span>{% translate "Pump power" %}</span>
+                            <input id="direct-pump" type="checkbox" role="switch" disabled>
+                            <span class="direct-track" aria-hidden="true"></span>
+                        </label>
+                        <div id="pump-state"
+                             class="output-status output-status-unknown mt-3"
+                             aria-live="polite">
+                            <i id="pump-state-icon" class="bi bi-question-circle" aria-hidden="true"></i>
+                            <span id="pump-state-text">{% translate "Waiting for controller…" %}</span>
+                        </div>
+                        <div class="pump-measurements mt-3">
+                            <div>
+                                <span class="eyebrow">{% translate "Voltage" %}</span>
+                                <div id="pump-voltage" class="manual-reading">— V</div>
+                            </div>
+                            <div>
+                                <span class="eyebrow">{% translate "Current" %}</span>
+                                <div id="pump-current" class="manual-reading">— A</div>
+                            </div>
+                        </div>
+                        <div id="pump-monitor-status"
+                             class="small text-body-secondary mt-2"
+                             aria-live="polite"></div>
+                        <small class="text-body-secondary">{% translate "Measured by INA226 · nominal supply 24 V" %}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p id="direct-confirmation"
+           class="text-body-secondary mt-4"
+           aria-live="polite"></p>
+        <p class="small text-body-secondary">
+            {% translate "The heater runs at full power without PID. Overheat and connection loss protection remain active." %}
+        </p>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    {{ direct_messages|json_script:"direct-messages" }}<script src="{% static 'js/direct-control.js' %}"></script>
+{% endblock extra_js %}
