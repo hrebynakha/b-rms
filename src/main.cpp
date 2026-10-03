@@ -1,9 +1,12 @@
 #include <Arduino.h>
 
 #include "sensors.h"
+#include "buzzer.h"
+#include "status_rgb.h"
 #include "heater_output.h"
 #include "telemetry.h"
 #include "wifi_manager.h"
+#include "button.h"
 
 namespace {
 constexpr uint32_t TELEMETRY_INTERVAL_MS = 3000;
@@ -16,6 +19,8 @@ bool networkWasConnected = false;
 uint32_t lastTelemetryAt = 0;
 uint32_t lastRegistrationAttemptAt = 0;
 uint32_t lastCommandPollAt = 0;
+bool buttonStopPending = false;
+uint32_t lastButtonStopAt = 0;
 }  // namespace
 
 void setup() {
@@ -23,6 +28,9 @@ void setup() {
     delay(500);
     Serial.println("\n=== B-RMS BOOT ===");
     beginHeaterOutput();
+    beginStatusRgb();
+    beginBuzzer();
+    beginButton();
 
     deviceMode = beginNetwork();
     if (deviceMode == DeviceMode::Provisioning) {
@@ -35,9 +43,33 @@ void setup() {
     networkWasConnected = true;
     lastRegistrationAttemptAt = millis();
     controllerRegistered = sendInit();
+    setStatusRgbReady(controllerRegistered);
 }
 
 void loop() {
+    ButtonAction action;
+    if (readButtonAction(action)) {
+        if (action == ButtonAction::WiFiReset) {
+            stopHeaterOutput();
+            deviceMode = DeviceMode::Provisioning;
+            controllerRegistered = false;
+            setStatusRgbReady(false);
+            enterWiFiSetup();
+        } else if (action == ButtonAction::StopAll) {
+            buttonStopPending = true;
+            lastButtonStopAt = millis() - COMMAND_POLL_INTERVAL_MS;
+        } else if (buttonStopPending) {
+            beepBuzzer(3);
+        } else if (deviceMode == DeviceMode::Operational && isWiFiConnected()) {
+            if (sendButtonToggle(action == ButtonAction::Pump)) {
+                lastCommandPollAt = millis() - COMMAND_POLL_INTERVAL_MS;
+            } else {
+                beepBuzzer(3);
+            }
+        } else {
+            beepBuzzer(3);
+        }
+    }
     handleNetwork();
 
     if (deviceMode != DeviceMode::Operational) {
@@ -53,12 +85,20 @@ void loop() {
     }
 
     const uint32_t now = millis();
+    if (buttonStopPending && now - lastButtonStopAt >= COMMAND_POLL_INTERVAL_MS) {
+        lastButtonStopAt = now;
+        if (sendButtonStop()) {
+            buttonStopPending = false;
+            lastCommandPollAt = millis() - COMMAND_POLL_INTERVAL_MS;
+        }
+    }
     if (now - lastCommandPollAt >= COMMAND_POLL_INTERVAL_MS) {
         lastCommandPollAt = now;
         if (pollControllerCommands()) {
             stopHeaterOutput();
             Serial.println("B-RMS requested Wi-Fi setup.");
             deviceMode = DeviceMode::Provisioning;
+            setStatusRgbReady(false);
             controllerRegistered = false;
             enterWiFiSetup();
             return;
@@ -73,6 +113,7 @@ void loop() {
         if (now - lastRegistrationAttemptAt >= REGISTRATION_RETRY_MS) {
             lastRegistrationAttemptAt = now;
             controllerRegistered = sendInit();
+            if (controllerRegistered) setStatusRgbReady(true);
         }
         delay(10);
         return;
@@ -85,6 +126,7 @@ void loop() {
     lastTelemetryAt = now;
 
     const bool sensorsValid = readSensors();
+    setStatusRgbSensorValid(sensorsValid);
     updateHeaterTemperature(sensorsValid, lastTemp);
     if (!sensorsValid) {
         Serial.println("Skipping telemetry: sensor read failed.");

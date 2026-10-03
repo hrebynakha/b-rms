@@ -21,6 +21,61 @@ class DirectControlTests(TestCase):
     def command(self, output, on):
         return self.client.post(self.url, {'output': output, 'on': 'true' if on else 'false'})
 
+    def button(self, output):
+        return self.client.post(reverse('controller-button'), {
+            'mac_address': self.controller.mac_address, 'output': output,
+        }, content_type='application/json')
+
+    def test_button_toggles_shared_state_and_preserves_other_output(self):
+        self.assertTrue(self.button('heater').json()['active'])
+        state = self.button('pump').json()
+        self.assertTrue(state['active'])
+        self.assertTrue(state['pump_on'])
+        state = self.button('heater').json()
+        self.assertFalse(state['active'])
+        self.assertTrue(state['pump_on'])
+        self.assertEqual(state['revision'], 3)
+
+    def test_button_rejects_pid_stale_sensor_and_invalid_output(self):
+        self.control.active = True
+        self.control.save()
+        self.assertEqual(self.button('pump').status_code, 409)
+        self.control.active = False
+        self.control.save()
+        Telemetry.objects.filter(pk=self.reading.pk).update(
+            created_at=timezone.now() - timedelta(seconds=20))
+        self.assertEqual(self.button('heater').status_code, 409)
+        self.assertEqual(self.button('invalid').status_code, 400)
+
+    def test_button_stop_all_disables_pid_without_fresh_readings(self):
+        self.control.active = True
+        self.control.pump_on = True
+        self.control.save()
+        self.reading.delete()
+        response = self.button('all')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['active'])
+        self.assertFalse(response.json()['pump_on'])
+        self.assertFalse(response.json()['direct_mode'])
+        self.assertFalse(self.button('all').json()['active'])
+
+    def test_button_stop_all_preserves_direct_mode_and_web_state(self):
+        self.button('heater')
+        self.button('pump')
+        self.assertEqual(self.button('all').status_code, 200)
+        state = self.client.get(reverse('direct-status', args=[self.controller.pk])).json()
+        self.assertFalse(state['active'])
+        self.assertFalse(state['pump_on'])
+        self.assertTrue(state['direct_mode'])
+
+    def test_button_allows_turning_off_with_stale_sensor(self):
+        self.button('pump')
+        Telemetry.objects.filter(pk=self.reading.pk).update(
+            created_at=timezone.now() - timedelta(seconds=20))
+        response = self.button('pump')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['pump_on'])
+
     def test_independent_outputs_and_stop_all(self):
         self.assertEqual(self.command('heater', True).status_code, 200)
         state = self.command('pump', True).json()

@@ -24,6 +24,8 @@ portMUX_TYPE outputMux = portMUX_INITIALIZER_UNLOCKED;
 HeatingPid pid;
 bool enabled = false, sensorValid = false, faultLatched = false;
 bool directMode = false, pumpOn = false;
+bool inhibited = false;
+bool permanentlyInhibited = false;
 void writePump(bool on) { digitalWrite(PUMP_OUTPUT_PIN, on == bool(PUMP_RELAY_ACTIVE_HIGH) ? HIGH : LOW); }
 bool outputOn = false, resetPending = true, taskReady = false;
 float sensorTemperature = NAN, targetTemperature = 50, overheatTemperature = 60;
@@ -119,6 +121,20 @@ void stopHeaterOutput() {
     portEXIT_CRITICAL(&outputMux);
 }
 
+void inhibitHeaterOutput(bool permanent) {
+    portENTER_CRITICAL(&outputMux);
+    inhibited = true;
+    permanentlyInhibited = permanentlyInhibited || permanent;
+    off();
+    portEXIT_CRITICAL(&outputMux);
+}
+
+void releaseHeaterOutputInhibit() {
+    portENTER_CRITICAL(&outputMux);
+    if (!permanentlyInhibited) inhibited = false;
+    portEXIT_CRITICAL(&outputMux);
+}
+
 void updateHeaterTemperature(bool valid, float temperature) {
     portENTER_CRITICAL(&outputMux);
     sensorValid = valid && isfinite(temperature) && temperature >= -55 && temperature <= 125;
@@ -138,7 +154,7 @@ void setHeaterCommand(bool active, float target, float overheat, float newKp, fl
         newKp != kp || newKi != ki || newKd != kd || newWindowMs != windowMs || overheat != overheatTemperature;
     revision = commandRevision;
     commandAt = millis();
-    const bool valid = taskReady && isfinite(target) && target >= 30 && target <= 100 &&
+    const bool valid = taskReady && !inhibited && isfinite(target) && target >= 30 && target <= 100 &&
         isfinite(overheat) && overheat > target && overheat <= 150 &&
         isfinite(newKp) && newKp >= 0 && newKp <= 100 &&
         isfinite(newKi) && newKi >= 0 && newKi <= 10 &&
@@ -171,7 +187,7 @@ void setDirectCommand(bool heaterOn, bool requestedPumpOn, float overheat, uint3
     directMode = true;
     revision = commandRevision;
     commandAt = millis();
-    if (!taskReady || blocked || !isfinite(overheat) || overheat <= 0 || overheat > 150) {
+    if (!taskReady || inhibited || blocked || !isfinite(overheat) || overheat <= 0 || overheat > 150) {
         off();
     } else {
         faultLatched = false;

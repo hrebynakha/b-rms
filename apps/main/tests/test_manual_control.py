@@ -157,7 +157,7 @@ class ManualControlTests(TestCase):
         self.assertEqual(len(self.client.get(self.status_url).json()["history"]), 1)
         # Windows can return identical clock timestamps for adjacent requests.
         sample_time = self.control.samples.get().created_at
-        with patch("apps.main.manual_views.timezone.now", return_value=sample_time):
+        with patch("apps.api.views.control.timezone.now", return_value=sample_time):
             response = self.client.get(self.status_url, {"reset_chart": "1"}).json()
         self.assertIn("chart_since", response)
         self.assertEqual(response["history"], [])

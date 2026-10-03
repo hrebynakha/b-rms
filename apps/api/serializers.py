@@ -81,3 +81,32 @@ class ManualReportSerializer(serializers.Serializer):
             if not attrs["enabled"] and (attrs["ssr_on"] or attrs["on_time_ms"]):
                 raise serializers.ValidationError(_("A disabled output must be OFF."))
         return attrs
+
+
+class ManualSettingsSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=["start", "apply", "stop"])
+    target_temperature = serializers.FloatField(min_value=30, max_value=100, required=False)
+    warning_delta = serializers.FloatField(min_value=1, max_value=50, required=False)
+    warning_mode = serializers.ChoiceField(choices=["degrees", "percent"], required=False)
+    pid_kp = serializers.FloatField(min_value=0, max_value=100, required=False)
+    pid_ki = serializers.FloatField(min_value=0, max_value=10, required=False)
+    pid_kd = serializers.FloatField(min_value=0, max_value=1000, required=False)
+    window_ms = serializers.IntegerField(min_value=1000, max_value=10000, required=False)
+
+    def validate(self, attrs):
+        if any(not math.isfinite(attrs[key]) for key in ("target_temperature", "warning_delta", "pid_kp", "pid_ki", "pid_kd") if key in attrs):
+            raise serializers.ValidationError(_("Values must be finite numbers."))
+        if any(attrs[key] % 1 for key in ("target_temperature", "warning_delta") if key in attrs):
+            raise serializers.ValidationError(_("Target temperature and warning threshold must be whole numbers."))
+        return attrs
+
+
+class ControllerCommandSerializer(serializers.Serializer):
+    mac_address = serializers.CharField()
+    command_id = serializers.UUIDField(required=False)
+
+
+
+class ControllerButtonSerializer(serializers.Serializer):
+    mac_address = serializers.CharField()
+    output = serializers.ChoiceField(choices=["heater", "pump", "all"])
