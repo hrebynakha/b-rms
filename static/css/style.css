@@ -218,7 +218,68 @@ body {
 
 .step-handle {
     margin-right: 0.4rem;
-    color: var(--bs-secondary-color);
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: none;
+    cursor: grab;
+}
+
+.step-handle:disabled {
+    cursor: default;
+}
+
+.step-handle:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 3px;
+}
+
+.step-item.is-dragging {
+    z-index: 1040;
+    pointer-events: none;
+    user-select: none;
+    background: var(--bs-body-bg);
+    border-color: var(--bs-primary);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    transform: scale(1.015);
+    will-change: top, left;
+}
+
+.step-placeholder {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    border: 2px dashed var(--bs-primary);
+    border-radius: 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-primary-text-emphasis);
+    font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step-item.is-dragging {
+        transform: none;
+    }
+}
+
+.step-item.is-dragging .step-handle {
+    cursor: grabbing;
+}
+
+@media (forced-colors: active) {
+    .step-handle:focus-visible,
+    .step-item.is-dragging {
+        outline-color: Highlight;
+    }
+
+    .step-item.is-dragging,
+    .step-placeholder {
+        border-color: Highlight;
+    }
+
+    .step-placeholder {
+        color: CanvasText;
+        background: Canvas;
+    }
 }
 
 .chart-shell {

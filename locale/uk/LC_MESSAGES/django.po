@@ -288,8 +288,8 @@ msgid "Name"
 msgstr "Назва"
 
 #: apps/main/templates/main/recipe_form.html:30
-msgid "Mash Steps"
-msgstr "Етапи затирання"
+msgid "Brewing stages"
+msgstr "Етапи варіння"
 
 #: apps/main/templates/main/recipe_form.html:33
 msgid "Add Step"
@@ -455,8 +455,8 @@ msgstr "Виберіть броварню та рецепт перед запу�
 msgid "Recipe builder"
 msgstr "Конструктор рецептів"
 
-msgid "Build the mash schedule step by step."
-msgstr "Складіть програму затирання крок за кроком."
+msgid "Build the brewing schedule step by step."
+msgstr "Складіть програму варіння етап за етапом."
 
 msgid "Remove step"
 msgstr "Видалити крок"
@@ -1116,3 +1116,12 @@ msgstr "Видаляти можна лише завершені або скас�
 
 msgid "Delete this session?"
 msgstr "Видалити цю сесію?"
+
+msgid "Reorder step"
+msgstr "Змінити порядок кроку"
+
+msgid "Drop the stage here"
+msgstr "Відпустіть етап тут"
+
+msgid "Drag the handle to reorder steps, or focus it and use the Up and Down arrow keys. Save the recipe to keep the new order."
+msgstr "Перетягніть ручку, щоб змінити порядок кроків, або виберіть її клавішею Tab і використовуйте стрілки вгору та вниз. Збережіть рецепт, щоб зберегти новий порядок."
